@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MindMappr – AI Study Assistant</title>
+    <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">🧠</span>
+                <span class="logo-text">MindMappr</span>
+            </div>
+            <p class="tagline">Discover study techniques tailored to your learning style</p>
+        </header>
+
+        <!-- Main Form Card -->
+        <main class="main-card">
+            <h2 class="card-title">Get Personalized Study Recommendations</h2>
+            <p class="card-description">Tell us about your study session and we'll suggest the best techniques for you.</p>
+
+            <form id="studyForm" class="form">
+                <div class="form-group">
+                    <label for="subject">What are you studying?</label>
+                    <input 
+                        id="subject" 
+                        type="text" 
+                        placeholder="e.g., Biology, Calculus, History" 
+                        required 
+                    />
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="time">Study Duration</label>
+                        <div class="input-with-suffix">
+                            <input 
+                                id="time" 
+                                type="number" 
+                                min="5" 
+                                max="480"
+                                placeholder="60" 
+                                required 
+                            />
+                            <span class="suffix">minutes</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="level">Your Level</label>
+                        <select id="level" required>
+                            <option value="" disabled selected>Select level</option>
+                            <option value="beginner">Beginner</option>
+                            <option value="intermediate">Intermediate</option>
+                            <option value="advanced">Advanced</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" id="sendBtn" class="btn btn-primary">
+                    <span class="btn-text">Get Recommendations</span>
+                    <span class="btn-loading hidden">
+                        <span class="spinner"></span>
+                        Generating...
+                    </span>
+                </button>
+            </form>
+        </main>
+
+        <!-- Results Section -->
+        <section id="resultsSection" class="results-card hidden">
+            <div class="results-header">
+                <h3 class="results-title">Your Study Plan</h3>
+                <button id="clearBtn" class="btn btn-ghost">Clear</button>
+            </div>
+            <div id="resultsContent" class="results-content">
+                <!-- Results will be inserted here -->
+            </div>
+        </section>
+
+        <!-- Status indicator -->
+        <div id="statusBar" class="status-bar">
+            <span class="status-dot"></span>
+            <span id="statusText">Checking API...</span>
+        </div>
+    </div>
+
+    <script src="./script.js"></script>
+</body>
+</html>
