@@ -1,32 +1,89 @@
+import json
 import os
 from dotenv import load_dotenv
 from anthropic import Anthropic
 from anthropic.types import TextBlock
 from typing import Optional
+from backends.schemas.study import StudyRecommendation
 
 load_dotenv()
 
 client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
-def generate_recommendation(subject:str, level:str, time:int) -> Optional[str]:
+SYSTEM_PROMPT = """You are an expert study coach who creates practical, specific study plans.
+You respond ONLY with valid JSON (no markdown, no code fences, no extra text).
+The JSON must have exactly this structure:
+{
+  "summary": "A 1-2 sentence overview of the study plan",
+  "techniques": [
+    {
+      "title": "Technique name",
+      "description": "2-3 sentences explaining how to apply this technique specifically to the given subject. Be concrete and actionable, not generic.",
+      "duration_minutes": <integer minutes allocated to this technique>
+    }
+  ],
+  "tips": [
+    "A practical, specific tip relevant to the subject and level"
+  ]
+}
+
+Rules:
+- Provide 2-4 techniques depending on available time
+- The sum of all duration_minutes MUST equal the total study duration provided
+- Tips should be 2-4 concrete, actionable items specific to the subject
+- Never use phrases like "Here are some techniques" or "I recommend" -- just provide the data
+- Tailor everything to the specific subject matter, not generic study advice
+- For the summary, write as if you're briefing a student before a session -- direct, confident, no hedging"""
+
+
+def generate_recommendation(
+    subject: str, level: str, time: int, goal: Optional[str] = None
+) -> StudyRecommendation:
+    goal_line = f"\n- Learning goal: {goal}" if goal else ""
+
+    user_message = f"""Create a study plan for:
+- Subject: {subject}
+- Level: {level}
+- Duration: {time} minutes{goal_line}
+
+Respond with JSON only."""
+
     try:
         response = client.messages.create(
             model="claude-opus-4-6",
-            messages=[{
-                "role": "user",
-                "content": f"""You are a study coach. Suggest effective study techniques for:
-                    - Subject: {subject}
-                    - Level: {level}
-                    - Duration: {time} minutes
-                    
-                    Provide 2-3 specific, actionable techniques tailored to this subject and time available."""
-            }],
-            max_tokens=1024
+            system=SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": user_message}],
+            max_tokens=1024,
         )
-        
+
         content_block = response.content[0]
         if isinstance(content_block, TextBlock):
-            return content_block.text
-        return "No recommendation available."
+            raw = content_block.text.strip()
+            # Strip markdown code fences if Claude adds them despite instructions
+            if raw.startswith("```"):
+                raw = raw.split("\n", 1)[1]
+                raw = raw.rsplit("```", 1)[0]
+                raw = raw.strip()
+            data = json.loads(raw)
+            return StudyRecommendation(**data)
+
+        raise ValueError("Unexpected response format from Claude")
+
+    except (json.JSONDecodeError, ValueError, KeyError):
+        return StudyRecommendation(
+            summary=f"Study plan for {subject} ({time} minutes, {level} level)",
+            techniques=[
+                {
+                    "title": "Focused Study Session",
+                    "description": f"Dedicate your {time} minutes to focused study of {subject}. "
+                    "Remove distractions and work through the material methodically.",
+                    "duration_minutes": time,
+                }
+            ],
+            tips=[
+                "Take short breaks every 25 minutes to maintain focus.",
+                "Review your notes within 24 hours to strengthen retention.",
+            ],
+        )
     except Exception as e:
-        return f"Error generating recommendation: {str(e)}"
+        raise RuntimeError(f"Failed to generate recommendation: {str(e)}")

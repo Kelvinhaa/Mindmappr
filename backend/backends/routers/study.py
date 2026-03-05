@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from backends.schemas.study import StudyRequest, StudyResponse
 from backends.services.study import generate_recommendation
 
@@ -16,17 +16,20 @@ def list_studies():
 
 @router.post(path="/", response_model=StudyResponse)
 def create_study(payload: StudyRequest):
-    recommendation = generate_recommendation(
-        subject=payload.subject,
-        level=payload.level,
-        time=payload.time
-    )
+    try:
+        recommendation = generate_recommendation(
+            subject=payload.subject,
+            level=payload.level,
+            time=payload.time,
+            goal=payload.goal,
+        )
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+
     entry = {
         "id": len(database) + 1,
-        # Unpack all fields from payload (time, subject, level) into the dict.
         **payload.model_dump(),
-        "recommendation": recommendation
-
+        "recommendation": recommendation.model_dump(),
     }
     database.append(entry)
     return entry
@@ -36,4 +39,4 @@ def get_study(study_id: int):
     for item in database:
         if item["id"] == study_id:
             return item
-    return {"error": "Not found"}
+    raise HTTPException(status_code=404, detail="Study session not found")
