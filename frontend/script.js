@@ -56,6 +56,12 @@ function showSkeleton(meta) {
 // Render structured results
 function showResults(data) {
     const rec = data.recommendation;
+
+    if (!rec || !Array.isArray(rec.techniques) || !Array.isArray(rec.tips)) {
+        showError("Received an unexpected response format. Please try again.");
+        return;
+    }
+
     const goalHtml = data.goal ? `<span>🎯 ${escapeHtml(data.goal)}</span>` : "";
 
     const techniquesHtml = rec.techniques.map(t => `
