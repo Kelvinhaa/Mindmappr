@@ -1,7 +1,11 @@
 {
-  "outputDirectory": "frontend",
-  "rewrites": [
-    { "source": "/study", "destination": "/api/index.py" },
-    { "source": "/study/:path*", "destination": "/api/index.py" }
+  "builds": [
+    { "src": "api/index.py", "use": "@vercel/python" },
+    { "src": "frontend/**", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/study(/?.*)", "dest": "api/index.py" },
+    { "src": "/(.*\\.(?:js|css|ico|png|jpg|jpeg|svg|gif))", "dest": "frontend/$1" },
+    { "src": "/(.*)", "dest": "frontend/index.html" }
   ]
 }
