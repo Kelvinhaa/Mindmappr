@@ -8,27 +8,7 @@ const btnLoading = sendBtn.querySelector(".btn-loading");
 const resultsSection = document.getElementById("resultsSection");
 const resultsContent = document.getElementById("resultsContent");
 const clearBtn = document.getElementById("clearBtn");
-const statusBar = document.getElementById("statusBar");
-const statusText = document.getElementById("statusText");
-
-// Check API status on load
-async function checkApiStatus() {
-    statusBar.className = "status-bar loading";
-    statusText.textContent = "Connecting...";
-    
-    try {
-        const res = await fetch(`${API_BASE}/`);
-        if (res.ok) {
-            statusBar.className = "status-bar online";
-            statusText.textContent = "API Connected";
-        } else {
-            throw new Error("API error");
-        }
-    } catch (err) {
-        statusBar.className = "status-bar offline";
-        statusText.textContent = "API Offline – Start backend server";
-    }
-}
+const formError = document.getElementById("formError");
 
 // Set loading state
 function setLoading(loading) {
@@ -37,72 +17,128 @@ function setLoading(loading) {
     btnLoading.classList.toggle("hidden", !loading);
 }
 
-// Show results
-function showResults(data) {
+function escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function showFormError(msg) {
+    formError.textContent = msg;
+    formError.classList.remove("hidden");
+}
+
+function hideFormError() {
+    formError.classList.add("hidden");
+}
+
+// Show skeleton placeholders while loading
+function showSkeleton(meta) {
     resultsSection.classList.remove("hidden");
-    
+    resultsContent.classList.remove("loaded");
+    const goalHtml = meta.goal ? `<span>🎯 ${escapeHtml(meta.goal)}</span>` : "";
     resultsContent.innerHTML = `
         <div class="results-meta">
-            <span>📚 ${data.subject}</span>
-            <span>⏱️ ${data.time} min</span>
-            <span>📊 ${data.level}</span>
+            <span>📚 ${escapeHtml(meta.subject)}</span>
+            <span>⏱️ ${meta.time} min</span>
+            <span>📊 ${escapeHtml(meta.level)}</span>
+            ${goalHtml}
         </div>
-        <div class="recommendation-text">${data.recommendation || "No recommendation available."}</div>
+        <div class="skeleton-container">
+            <div class="skeleton-block skeleton-summary"></div>
+            <div class="skeleton-block skeleton-technique"></div>
+            <div class="skeleton-block skeleton-technique"></div>
+            <div class="skeleton-block skeleton-tips"></div>
+        </div>
     `;
 }
 
-// Show error
-function showError(message) {
-    resultsSection.classList.remove("hidden");
-    resultsContent.innerHTML = `<div style="color: var(--error);">❌ ${message}</div>`;
+// Render structured results
+function showResults(data) {
+    const rec = data.recommendation;
+    const goalHtml = data.goal ? `<span>🎯 ${escapeHtml(data.goal)}</span>` : "";
+
+    const techniquesHtml = rec.techniques.map(t => `
+        <div class="technique-card">
+            <div class="technique-header">
+                <span class="technique-title">${escapeHtml(t.title)}</span>
+                <span class="technique-duration">${t.duration_minutes} min</span>
+            </div>
+            <p class="technique-description">${escapeHtml(t.description)}</p>
+        </div>`).join("");
+
+    const tipsHtml = rec.tips.map(tip => `<li>${escapeHtml(tip)}</li>`).join("");
+
+    resultsContent.innerHTML = `
+        <div class="results-meta">
+            <span>📚 ${escapeHtml(data.subject)}</span>
+            <span>⏱️ ${data.time} min</span>
+            <span>📊 ${escapeHtml(data.level)}</span>
+            ${goalHtml}
+        </div>
+        <div class="result-summary">${escapeHtml(rec.summary)}</div>
+        <div class="techniques-grid">${techniquesHtml}</div>
+        ${rec.tips.length > 0 ? `<div class="tips-callout"><div class="tips-label">Quick Tips</div><ul class="tips-list">${tipsHtml}</ul></div>` : ""}
+    `;
+    resultsContent.classList.add("loaded");
 }
 
-// Clear results
+function showError(message) {
+    resultsSection.classList.add("hidden");
+    resultsContent.innerHTML = "";
+    showFormError(message);
+}
+
 function clearResults() {
     resultsSection.classList.add("hidden");
     resultsContent.innerHTML = "";
+    resultsContent.classList.remove("loaded");
+    hideFormError();
     studyForm.reset();
 }
 
 // Submit form
 async function handleSubmit(e) {
     e.preventDefault();
-    
+    hideFormError();
+
     const time = parseInt(document.getElementById("time").value, 10);
     const subject = document.getElementById("subject").value.trim();
     const level = document.getElementById("level").value;
+    const goal = document.getElementById("goal").value.trim() || null;
 
     if (!subject || !time || !level) {
-        showError("Please fill in all fields.");
+        showFormError("Please fill in all required fields.");
         return;
     }
 
     setLoading(true);
+    showSkeleton({ subject, time, level, goal });
 
     try {
         const res = await fetch(`${API_BASE}/study/`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ time, subject, level }),
+            body: JSON.stringify({ time, subject, level, goal }),
         });
 
         if (!res.ok) {
             const errorData = await res.json().catch(() => ({}));
-            throw new Error(errorData.detail || `Error ${res.status}`);
+            throw new Error(errorData.detail || `Server error (${res.status})`);
         }
 
         const data = await res.json();
         showResults(data);
     } catch (err) {
-        showError(err.message || "Failed to connect to API");
+        showError(err.message === "Failed to fetch"
+            ? "Cannot reach the server. Make sure the backend is running."
+            : err.message || "Something went wrong.");
     } finally {
         setLoading(false);
     }
 }
 
-// Event listeners
 document.addEventListener("DOMContentLoaded", () => {
-    checkApiStatus();
     studyForm.addEventListener("submit", handleSubmit);
     clearBtn.addEventListener("click", clearResults);
 });
