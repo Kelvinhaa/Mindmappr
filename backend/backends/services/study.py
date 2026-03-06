@@ -36,6 +36,24 @@ Rules:
 - For the summary, write as if you're briefing a student before a session -- direct, confident, no hedging"""
 
 
+def _fallback_recommendation(subject: str, time: int, level: str) -> StudyRecommendation:
+    return StudyRecommendation(
+        summary=f"Study plan for {subject} ({time} minutes, {level} level)",
+        techniques=[
+            {
+                "title": "Focused Study Session",
+                "description": f"Dedicate your {time} minutes to focused study of {subject}. "
+                "Remove distractions and work through the material methodically.",
+                "duration_minutes": time,
+            }
+        ],
+        tips=[
+            "Take short breaks every 25 minutes to maintain focus.",
+            "Review your notes within 24 hours to strengthen retention.",
+        ],
+    )
+
+
 def generate_recommendation(
     subject: str, level: str, time: int, goal: Optional[str] = None
 ) -> StudyRecommendation:
@@ -69,21 +87,9 @@ Respond with JSON only."""
 
         raise ValueError("Unexpected response format from Claude")
 
-    except (json.JSONDecodeError, ValueError, KeyError):
-        return StudyRecommendation(
-            summary=f"Study plan for {subject} ({time} minutes, {level} level)",
-            techniques=[
-                {
-                    "title": "Focused Study Session",
-                    "description": f"Dedicate your {time} minutes to focused study of {subject}. "
-                    "Remove distractions and work through the material methodically.",
-                    "duration_minutes": time,
-                }
-            ],
-            tips=[
-                "Take short breaks every 25 minutes to maintain focus.",
-                "Review your notes within 24 hours to strengthen retention.",
-            ],
-        )
+    except (json.JSONDecodeError, ValueError, KeyError) as e:
+        print(f"[study-service] Parse error, using fallback: {e}")
+        return _fallback_recommendation(subject, time, level)
     except Exception as e:
-        raise RuntimeError(f"Failed to generate recommendation: {str(e)}")
+        print(f"[study-service] API error, using fallback: {e}")
+        return _fallback_recommendation(subject, time, level)

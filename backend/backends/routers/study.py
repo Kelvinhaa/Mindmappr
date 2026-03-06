@@ -16,15 +16,12 @@ def list_studies():
 
 @router.post(path="/", response_model=StudyResponse)
 def create_study(payload: StudyRequest):
-    try:
-        recommendation = generate_recommendation(
-            subject=payload.subject,
-            level=payload.level,
-            time=payload.time,
-            goal=payload.goal,
-        )
-    except RuntimeError as e:
-        raise HTTPException(status_code=503, detail=str(e))
+    recommendation = generate_recommendation(
+        subject=payload.subject,
+        level=payload.level,
+        time=payload.time,
+        goal=payload.goal,
+    )
 
     entry = {
         "id": len(database) + 1,

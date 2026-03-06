@@ -58,6 +58,7 @@ function showResults(data) {
     const rec = data.recommendation;
 
     if (!rec || !Array.isArray(rec.techniques) || !Array.isArray(rec.tips)) {
+        console.warn("Unexpected recommendation shape:", rec);
         showError("Received an unexpected response format. Please try again.");
         return;
     }

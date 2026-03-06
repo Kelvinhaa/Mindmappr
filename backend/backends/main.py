@@ -26,15 +26,7 @@ database = {"technique":[]}
 def root():
     return {"status": "AI Study Assistant running"}
 
-# @app.post("/")
-# def add_root(payload: StudyRequest):
-#     # Store the incoming request in memory and echo it back
-#     database["technique"].append(payload)
-#     return {
-#         "ok": True,
-#         "received": payload,
-#         "total": len(database["technique"]),
-#     }
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
