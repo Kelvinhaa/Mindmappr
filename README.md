@@ -1,6 +1,6 @@
 # MindMappr
 
-An AI-powered study assistant that generates personalized study recommendations based on your subject, available time, and expertise level. Built with FastAPI and vanilla JavaScript, powered by Anthropic's Claude API.
+An AI-powered study assistant that generates personalized study recommendations based on your subject, available time, and expertise level. Built with FastAPI and vanilla JavaScript, powered by Anthropic's Claude API. Deployment on Vercel: mindmappr-omega.vercel.app
 
 ## Usage
 
