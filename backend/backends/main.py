@@ -12,17 +12,19 @@ origins = [
     "http://localhost:5500",
     "https://mindmappr-alpha.vercel.app",
 ]
+# Controls which can call API to each other (front to backend)
 app.add_middleware(
     CORSMiddleware, 
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["*"], # This kinda allow GET, POST requrests
     allow_headers=["*"]
 )
 app.include_router(study_router)
 
 database = {"technique":[]}
 
+# HTTP Request get method
 @app.get("/")
 def root():
     return {"status": "AI Study Assistant running"}

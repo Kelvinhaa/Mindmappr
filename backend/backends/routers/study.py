@@ -9,11 +9,12 @@ router = APIRouter(
 
 database = []
 
+# Return all study sessions
 @router.get("/", response_model=list[StudyResponse])
 def list_studies():
     return database
 
-
+# Create new study session
 @router.post(path="/", response_model=StudyResponse)
 def create_study(payload: StudyRequest):
     recommendation = generate_recommendation(
@@ -31,6 +32,7 @@ def create_study(payload: StudyRequest):
     database.append(entry)
     return entry
 
+# Later for implementing persistent postgresql
 @router.get("/{study_id}", response_model=StudyResponse)
 def get_study(study_id: int):
     for item in database:
