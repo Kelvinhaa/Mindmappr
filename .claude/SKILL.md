@@ -12,7 +12,7 @@ Skills, conventions, and patterns for working on the MindMappr codebase.
 | AI       | Anthropic SDK (`anthropic`), Claude     |
 | Frontend | Vanilla JS (ES6+), HTML5, CSS3         |
 | Server   | Uvicorn (ASGI)                         |
-| Deploy   | Vercel (Python runtime via `api/`)     |
+| Deploy   | Vercel (frontend) + AWS Elastic Beanstalk (backend) |
 | Container| Docker (backend)                       |
 
 ---

@@ -1,0 +1,91 @@
+name: Mindmappr Backend CI/CD (Elastic Beanstalk)
+
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/aws-ci-cd.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - ".github/workflows/aws-ci-cd.yml"
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  EB_APP_NAME: ${{ vars.EB_APP_NAME }}
+  EB_ENV_NAME: ${{ vars.EB_ENV_NAME }}
+  EB_S3_BUCKET: ${{ vars.EB_S3_BUCKET }}
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Validate app import and syntax
+        run: |
+          python -m compileall backends
+          python -c "from backends.main import app; print(app.title)"
+
+      - name: Build Docker image
+        run: docker build -t mindmappr-backend:ci .
+
+  deploy:
+    needs: ci
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Prepare deploy bundle
+        env:
+          VERSION_LABEL: ${{ github.sha }}-${{ github.run_number }}
+        run: |
+          echo "VERSION_LABEL=$VERSION_LABEL" >> "$GITHUB_ENV"
+          cd backend
+          zip -r ../deploy.zip . -x "*.venv/*" "*.git/*" "__pycache__/*" "*.pyc"
+
+      - name: Upload bundle to S3
+        run: |
+          aws s3 cp deploy.zip "s3://$EB_S3_BUCKET/$VERSION_LABEL.zip"
+
+      - name: Create Elastic Beanstalk application version
+        run: |
+          aws elasticbeanstalk create-application-version \
+            --application-name "$EB_APP_NAME" \
+            --version-label "$VERSION_LABEL" \
+            --source-bundle S3Bucket="$EB_S3_BUCKET",S3Key="$VERSION_LABEL.zip"
+
+      - name: Deploy application version to environment
+        run: |
+          aws elasticbeanstalk update-environment \
+            --environment-name "$EB_ENV_NAME" \
+            --version-label "$VERSION_LABEL"
