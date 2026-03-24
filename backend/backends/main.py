@@ -27,6 +27,7 @@ app.add_middleware(
 )
 app.include_router(study_router)
 
+# Non-functional marker comment for CI/CD trigger validation.
 # HTTP Request get method
 @app.get("/")
 def root():
