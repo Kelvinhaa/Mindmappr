@@ -35,6 +35,27 @@ uvicorn backends.main:app --reload --port 8000
 
 The backend runs on `http://localhost:8000`
 
+### Backend CI/CD (GitHub Actions + Elastic Beanstalk)
+The backend deploy pipeline is in `.github/workflows/aws-ci-cd.yml`.
+
+Behavior:
+- Runs CI for backend changes on pull requests (dependency install, syntax/import checks, docker build).
+- Deploys on push to `main` by creating an Elastic Beanstalk application version and updating the target environment.
+
+Required GitHub repository variables:
+- `AWS_REGION`
+- `EB_APP_NAME`
+- `EB_ENV_NAME`
+- `EB_S3_BUCKET`
+
+Required GitHub secret:
+- `AWS_ROLE_TO_ASSUME` (IAM role assumed via GitHub OIDC)
+
+Elastic Beanstalk runtime notes:
+- Deployment bundle is created from `backend/`.
+- `backend/Procfile` defines the startup command for FastAPI.
+- Keep backend environment variables configured in Elastic Beanstalk environment settings.
+
 ### Frontend Setup & Running
 ```bash
 # Navigate to frontend directory
@@ -117,6 +138,7 @@ frontend/
 ### Environment Variables
 - Backend requires `ANTHROPIC_API_KEY` in `backend/.env`
 - No environment variables needed for frontend
+- In production, set backend secrets in Elastic Beanstalk environment settings (not committed to repo)
 
 ### CORS Configuration
 - Backend allows origins: `localhost:3000`, `localhost:5500`, `127.0.0.1:3000`, `127.0.0.1:5500`
