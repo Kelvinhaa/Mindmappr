@@ -8,9 +8,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - "backend/**"
-      - ".github/workflows/aws-ci-cd.yml"
   workflow_dispatch:
 
 permissions:
@@ -18,7 +15,7 @@ permissions:
   contents: read
 
 env:
-  AWS_REGION: ${{ vars.AWS_REGION }}
+  AWS_REGION: ${{ vars.AWS_REGION || 'ap-southeast-2' }}
   EB_APP_NAME: ${{ vars.EB_APP_NAME }}
   EB_ENV_NAME: ${{ vars.EB_ENV_NAME }}
   EB_S3_BUCKET: ${{ vars.EB_S3_BUCKET }}
@@ -58,6 +55,38 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Validate deploy configuration
+        env:
+          ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+        run: |
+          missing=0
+
+          if [ -z "$AWS_REGION" ]; then
+            echo "Missing AWS region. Set repository variable AWS_REGION."
+            missing=1
+          fi
+          if [ -z "$EB_APP_NAME" ]; then
+            echo "Missing Elastic Beanstalk app name. Set repository variable EB_APP_NAME."
+            missing=1
+          fi
+          if [ -z "$EB_ENV_NAME" ]; then
+            echo "Missing Elastic Beanstalk environment name. Set repository variable EB_ENV_NAME."
+            missing=1
+          fi
+          if [ -z "$EB_S3_BUCKET" ]; then
+            echo "Missing deployment bucket. Set repository variable EB_S3_BUCKET."
+            missing=1
+          fi
+          if [ -z "$ROLE_TO_ASSUME" ]; then
+            echo "Missing AWS role secret. Set repository secret AWS_ROLE_TO_ASSUME."
+            missing=1
+          fi
+
+          if [ "$missing" -ne 0 ]; then
+            echo "Deploy configuration validation failed."
+            exit 1
+          fi
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
