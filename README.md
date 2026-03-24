@@ -1,8 +1,11 @@
 # MindMappr
 
-An AI-powered study assistant that generates personalized study recommendations based on your subject, available time, and expertise level. Built with FastAPI and vanilla JavaScript, powered by Anthropic's Claude API. 
+An AI-powered study assistant that generates personalized study recommendations based on your subject, available time, and expertise level. Built with FastAPI and vanilla JavaScript, powered by Anthropic's Claude API.
 
-# Deployment on Vercel: mindmappr-omega.vercel.app
+## Deployment
+
+- Vercel: mindmappr-omega.vercel.app
+- AWS Elastic Beanstalk (Docker platform): MindMappr-env.eba-gkfhscmg.ap-southeast-2.elasticbeanstalk.com 
 
 ## Usage
 
@@ -75,6 +78,23 @@ npx http-server -p 5500
 ```
 
 Then open http://localhost:5500 in your browser.
+
+## AWS Backend Deployment (Elastic Beanstalk)
+
+The backend is deployed to AWS Elastic Beanstalk using a Docker-based runtime.
+
+1. Create an Elastic Beanstalk application and environment.
+2. Use Docker platform for the environment.
+3. Confirm environment health is Green before first CI/CD deploy.
+
+## CI/CD with GitHub Actions
+
+Pipeline file: .github/workflows/aws-ci-cd.yml
+
+Behavior:
+- Pull requests and backend changes run CI checks.
+- Pushes to main run CI and then deploy to Elastic Beanstalk.
+
 
 ## **Project Structure**
 
