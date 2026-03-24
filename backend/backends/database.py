@@ -20,3 +20,6 @@ def get_db():
 	finally:
 		db.close()
 
+def test_db_connection():
+    with engine.connect() as connection:
+        connection.execute(text("SELECT 1"))
