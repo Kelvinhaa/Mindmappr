@@ -12,7 +12,7 @@ def _parse_cors_origins() -> list[str]:
     # Supports cors origin for deployment flexibility.
     raw_origins = os.getenv(
         "CORS_ORIGINS",
-        "http://localhost:3000,http://127.0.0.1:3000,http://127.0.0.1:5500,http://localhost:5500,https://mindmappr-alpha.vercel.app",
+        "http://localhost:3000,http://127.0.0.1:3000,http://127.0.0.1:5500,http://localhost:5500,https://mindmappr-alpha.vercel.app,https://mindmappr-omega.vercel.app",
     )
     return [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
 
@@ -27,7 +27,7 @@ app.add_middleware(
 )
 app.include_router(study_router)
 
-# Non-functional marker comment for CI/CD trigger validation.
+# RESTAPI
 # HTTP Request get method
 @app.get("/")
 def root():

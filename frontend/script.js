@@ -1,6 +1,22 @@
-const API_BASE = window.location.hostname === "localhost"
-    ? "http://localhost:8000"
-    : "";
+function normalizeApiBase(value) {
+    if (!value) return "";
+    return value.replace(/\/$/, "");
+}
+
+const apiBaseFromMeta = document
+    .querySelector('meta[name="mindmappr-api-base"]')
+    ?.getAttribute("content") || "";
+
+const API_BASE = (() => {
+    const hostname = window.location.hostname;
+
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
+        return "http://localhost:8000";
+    }
+
+    // In production, prefer explicit override via meta; otherwise use same-origin.
+    return normalizeApiBase(apiBaseFromMeta);
+})();
 
 // DOM Elements
 const studyForm = document.getElementById("studyForm");
@@ -132,8 +148,20 @@ async function handleSubmit(e) {
         });
 
         if (!res.ok) {
-            const errorData = await res.json().catch(() => ({}));
-            throw new Error(errorData.detail || `Server error (${res.status})`);
+            let errorMessage = `Server error (${res.status})`;
+            const contentType = res.headers.get("content-type") || "";
+
+            if (contentType.includes("application/json")) {
+                const errorData = await res.json().catch(() => ({}));
+                errorMessage = errorData.detail || errorData.message || errorMessage;
+            } else {
+                const errorText = await res.text().catch(() => "");
+                if (errorText) {
+                    errorMessage = errorText.slice(0, 200);
+                }
+            }
+
+            throw new Error(errorMessage);
         }
 
         const data = await res.json();
