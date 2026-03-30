@@ -4,7 +4,7 @@
     { "src": "frontend/**", "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "/study(/?.*)", "dest": "api/index.py" },
+    { "src": "/study(/?.*)", "dest": "http://MindMappr-env.eba-gkfhscmg.ap-southeast-2.elasticbeanstalk.com/study$1" },
     { "src": "/(.*\\.(?:js|css|ico|png|jpg|jpeg|svg|gif))", "dest": "frontend/$1" },
     { "src": "/(.*)", "dest": "frontend/index.html" }
   ]
