@@ -14,7 +14,7 @@ const API_BASE = (() => {
         return "http://localhost:8000";
     }
 
-    // In production, prefer explicit override via meta; otherwise use same-origin.
+    
     return normalizeApiBase(apiBaseFromMeta);
 })();
 
