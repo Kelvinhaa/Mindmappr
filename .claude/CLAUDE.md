@@ -162,6 +162,36 @@ frontend/
 - No error recovery for failed AI API calls
 - Frontend hardcodes backend URL (no environment configuration)
 
+## Security Audit And Checks
+
+Apply this checklist to all backend-affecting changes before commit or deployment.
+
+1. Secrets and config
+- Do not commit real secrets (`ANTHROPIC_API_KEY`, database passwords, tokens).
+- Keep `.env` local only; keep `.env.example` as placeholders.
+- If a secret is exposed, rotate immediately and replace all local copies.
+
+2. API hardening
+- Protect non-public routes with authentication and authorization.
+- Do not return raw exception strings to clients.
+- Validate all request payloads with Pydantic schemas.
+- Keep CORS origins explicit for production environments.
+
+3. Database hardening
+- Use `DATABASE_URL` from environment, no inline credentials.
+- Prefer ORM/parameterized access patterns only.
+- Add constraints/indexes through migrations, not ad-hoc manual edits.
+
+4. Runtime and dependencies
+- Review dependency additions for necessity and security impact.
+- Ensure Docker runs as non-root user.
+- Restrict docs/openapi exposure in production when required.
+
+5. Security review output expectations
+- List findings ordered by severity (`critical` to `low`).
+- Include file references and concrete fixes.
+- Call out open questions and residual risk.
+
 ## Commit Message Style
 - Write commit messages in a natural, human style — no AI-sounding language
 - Keep messages concise and lowercase where appropriate
