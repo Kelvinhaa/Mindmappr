@@ -68,10 +68,10 @@ Respond with JSON only."""
 
     try:
         response = client.messages.create(
-            model="claude-opus-4-6",
+            model="claude-sonnet-4-6",
             system=SYSTEM_PROMPT,
             messages=[{"role": "user", "content": user_message}],
-            max_tokens=1024,
+            max_tokens=800,
         )
 
         content_block = response.content[0]

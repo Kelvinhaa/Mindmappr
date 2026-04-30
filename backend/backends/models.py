@@ -3,7 +3,7 @@ from backends.database import Base
 
 # Database table 
 class StudySession(Base):
-    __tablename__ = "study sessions"
+    __tablename__ = "study_sessions"
 
     id = Column(Integer, primary_key=True, index=True)
     time = Column(Integer, nullable=False)
