@@ -2,8 +2,11 @@ import os
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backends.database import test_db_connection
+from backends.database import Base, engine, test_db_connection
 from backends.routers.study import router as study_router
+import backends.models  # noqa: F401 — registers ORM models with Base
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Mindmappr")
 
