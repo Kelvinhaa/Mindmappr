@@ -69,7 +69,11 @@ Respond with JSON only."""
     try:
         response = client.messages.create(
             model="claude-sonnet-4-6",
-            system=SYSTEM_PROMPT,
+            system=[{
+                "type": "text",
+                "text": SYSTEM_PROMPT,
+                "cache_control": {"type": "ephemeral"},
+            }],
             messages=[{"role": "user", "content": user_message}],
             max_tokens=800,
         )
