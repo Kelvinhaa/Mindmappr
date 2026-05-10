@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
+from backends.dependencies import limiter
 from backends.schemas.study import StudyRequest, StudyResponse
 from backends.services.study import generate_recommendation
 
@@ -14,9 +15,10 @@ database = []
 def list_studies():
     return database
 
-# Create new study session
+
 @router.post(path="/", response_model=StudyResponse)
-def create_study(payload: StudyRequest):
+@limiter.limit("5/minute")
+def create_study(request: Request, payload: StudyRequest):
     recommendation = generate_recommendation(
         subject=payload.subject,
         level=payload.level,
