@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from backends.database import get_db
+from backends.dependencies import limiter
 from backends.models import StudySession
 from backends.schemas.study import StudyRequest, StudyResponse
 from backends.services.study import generate_recommendation
@@ -17,7 +18,8 @@ def list_studies(db: Session = Depends(get_db)):
 
 
 @router.post("/", response_model=StudyResponse)
-def create_study(payload: StudyRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def create_study(request: Request, payload: StudyRequest, db: Session = Depends(get_db)):
     recommendation = generate_recommendation(
         subject=payload.subject,
         level=payload.level,
