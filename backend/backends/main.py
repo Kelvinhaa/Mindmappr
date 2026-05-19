@@ -1,15 +1,15 @@
 import os
 import uvicorn
+from dotenv import load_dotenv
 from fastapi import FastAPI
+
+load_dotenv()
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from backends.database import Base, engine, test_db_connection
+from backends.database import test_db_connection
 from backends.dependencies import limiter
 from backends.routers.study import router as study_router
-import backends.models  # noqa: F401 — registers ORM models with Base
-
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Mindmappr")
 app.state.limiter = limiter

@@ -41,6 +41,10 @@ jobs:
           pip install -r requirements.txt
 
       - name: Validate app import and syntax
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SUPABASE_JWT_SECRET: ${{ secrets.SUPABASE_JWT_SECRET }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           python -m compileall backends
           python -c "from backends.main import app; print(app.title)"
@@ -59,6 +63,7 @@ jobs:
       - name: Validate deploy configuration
         env:
           ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           missing=0
 

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import type { StudyResponse, StudyFormData } from "@/types/study";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 type UIState =
   | { status: "idle" }
@@ -13,8 +14,31 @@ type UIState =
   | { status: "error"; message: string };
 
 export default function Home() {
+  const router = useRouter();
   const [uiState, setUiState] = useState<UIState>({ status: "idle" });
   const [formError, setFormError] = useState<string>("");
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAccessToken(session?.access_token ?? null);
+      setUserEmail(session?.user?.email ?? null);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAccessToken(session?.access_token ?? null);
+      setUserEmail(session?.user?.email ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -37,7 +61,10 @@ export default function Home() {
     try {
       const res = await fetch(`${API_BASE}/study/`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { "Authorization": `Bearer ${accessToken}` } : {}),
+        },
         body: JSON.stringify({ time, subject, level, goal: goal || null }),
       });
 
@@ -76,16 +103,21 @@ export default function Home() {
 
   return (
     <div className="container">
-      {/* Header */}
       <header className="header">
         <div className="logo">
           <span className="logo-icon">🧠</span>
           <span className="logo-text">MindMappr</span>
         </div>
+        {userEmail && (
+          <div className="user-menu">
+            <div className="user-avatar">{userEmail[0]}</div>
+            <span className="user-email">{userEmail}</span>
+            <button className="btn-signout" onClick={handleSignOut}>Sign out</button>
+          </div>
+        )}
         <p className="tagline">Discover study techniques tailored to your learning style</p>
       </header>
 
-      {/* Form */}
       <main className="main-card">
         <h2 className="card-title">Get Personalized Study Recommendations</h2>
         <p className="card-description">
@@ -153,7 +185,6 @@ export default function Home() {
         </form>
       </main>
 
-      {/* Skeleton */}
       {uiState.status === "loading" && (
         <section className="results-card">
           <div className="results-header">
@@ -174,7 +205,6 @@ export default function Home() {
         </section>
       )}
 
-      {/* Results */}
       {uiState.status === "success" && (
         <section className="results-card">
           <div className="results-header">

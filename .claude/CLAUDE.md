@@ -5,207 +5,208 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 MindMappr is an AI Study Assistant that provides personalized study recommendations based on subject, duration, and expertise level. The application consists of:
-- **Frontend**: Vanilla JavaScript SPA with a modern dark theme
-- **Backend**: FastAPI service using Claude API (Anthropic) for generating study recommendations
+- **Frontend**: Next.js 16.2.4 (App Router, TypeScript, React 19) — located in `frontend-next/`
+- **Backend**: FastAPI + SQLAlchemy + Supabase PostgreSQL, with Supabase Auth JWT verification
+- **AI**: Claude API (Anthropic) for generating study recommendations
+
+---
 
 ## Development Commands
 
-### Backend Setup & Running
+### Backend
 ```bash
-# Navigate to backend directory
 cd backend
-
-# Create virtual environment (first time only)
-python3 -m venv .venv
-
-# Activate virtual environment
-source .venv/bin/activate  # On macOS/Linux
-
-# Install dependencies
+source .venv/bin/activate
 pip install -r requirements.txt
 
-# Set up environment variables
-# Create .env file with: ANTHROPIC_API_KEY=your_api_key_here
-
-# Run the development server
-python -m backends.main
-# Or using uvicorn directly:
+# Run dev server (loads .env automatically via load_dotenv())
 uvicorn backends.main:app --reload --port 8000
 ```
 
-The backend runs on `http://localhost:8000`
-
-### Backend CI/CD (GitHub Actions + Elastic Beanstalk)
-The backend deploy pipeline is in `.github/workflows/aws-ci-cd.yml`.
-
-Behavior:
-- Runs CI for backend changes on pull requests (dependency install, syntax/import checks, docker build).
-- Deploys on push to `main` by creating an Elastic Beanstalk application version and updating the target environment.
-
-Required GitHub repository variables:
-- `AWS_REGION`
-- `EB_APP_NAME`
-- `EB_ENV_NAME`
-- `EB_S3_BUCKET`
-
-Required GitHub secret:
-- `AWS_ROLE_TO_ASSUME` (IAM role assumed via GitHub OIDC)
-
-Elastic Beanstalk runtime notes:
-- Deployment bundle is created from `backend/`.
-- `backend/Procfile` defines the startup command for FastAPI.
-- Keep backend environment variables configured in Elastic Beanstalk environment settings.
-
-### Frontend Setup & Running
-```bash
-# Navigate to frontend directory
-cd frontend
-
-# Open with a local server (use any of these methods):
-# 1. VS Code Live Server extension (right-click index.html → Open with Live Server)
-# 2. Python HTTP server:
-python -m http.server 5500
-# 3. Node.js http-server:
-npx http-server -p 5500
+Required `backend/.env`:
+```
+ANTHROPIC_API_KEY=...
+DATABASE_URL=postgresql://postgres.[ref]:[password]@aws-1-ap-southeast-2.pooler.supabase.com:5432/postgres
+SUPABASE_JWT_SECRET=...
+SUPABASE_URL=https://[ref].supabase.co
 ```
 
-The frontend expects to run on ports 3000, 5500, or similar (see CORS configuration).
+### Database Migrations (Alembic)
+```bash
+cd backend
+source .venv/bin/activate
+
+# Generate migration after model changes
+alembic revision --autogenerate -m "description"
+
+# Apply migrations
+alembic upgrade head
+```
+
+**Alembic owns the schema** — `Base.metadata.create_all()` is intentionally removed from `main.py`.
+
+### Frontend
+```bash
+cd frontend-next
+npm run dev        # http://localhost:3000
+npm run build
+npm run lint
+```
+
+Required `frontend-next/.env.local`:
+```
+NEXT_PUBLIC_SUPABASE_URL=https://[ref].supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=eyJ...
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
+
+---
 
 ## Architecture
 
-### Backend Architecture (`backend/backends/`)
-
-The backend follows a layered FastAPI architecture:
+### Backend (`backend/backends/`)
 
 ```
 backends/
-├── main.py              # FastAPI app entry point, CORS config
+├── main.py              # FastAPI app, CORS, rate limiting, load_dotenv()
+├── auth.py              # Supabase JWT verification via PyJWT
+├── database.py          # SQLAlchemy engine, SessionLocal, Base, get_db()
+├── dependencies.py      # limiter (slowapi) — get_db() lives in database.py NOT here
+├── models.py            # ORM models (StudySession with user_id UUID)
 ├── routers/
-│   └── study.py        # API endpoints for study recommendations
+│   └── study.py         # /study/ endpoints — all require JWT auth
 ├── services/
-│   └── study.py        # Business logic, Claude API integration
-├── schemas/
-│   └── study.py        # Pydantic models for request/response validation
-├── database.py         # (Placeholder for future DB integration)
-└── dependencies.py     # Shared dependencies
+│   └── study.py         # Claude API integration with prompt caching
+└── schemas/
+    └── study.py         # Pydantic request/response models
+alembic/                 # Migration scripts
+alembic.ini
 ```
 
-**Key Design Patterns:**
-- **Router → Service → Schema**: Routers handle HTTP, services contain business logic, schemas validate data
-- **In-memory storage**: Currently using Python list for database (see `routers/study.py:10`)
-- **Claude API Integration**: Uses `anthropic` SDK (not `openai`) - see `services/study.py`
-- **Model**: Currently using `claude-opus-4-6` model
+**Key patterns:**
+- `Router → Service → Schema` — routers handle HTTP, services handle business logic
+- All `/study/` routes require `Depends(get_current_user_id)` — unauthenticated → 401
+- `get_db()` is defined **only** in `database.py`; `dependencies.py` owns `limiter` only
+- `load_dotenv()` is called at the **top of `main.py` before other backend imports**
 
-### Frontend Architecture (`frontend/`)
-
-Simple vanilla JavaScript application with no build process:
+### Frontend (`frontend-next/`)
 
 ```
-frontend/
-├── index.html          # Main HTML structure
-├── script.js           # DOM manipulation, API calls, state management
-└── style.css           # shadcn-inspired dark theme with CSS variables
+app/
+├── page.tsx             # Main study form — fetches Supabase session, sends Bearer token
+├── login/page.tsx       # Email/password login
+├── register/page.tsx    # User registration
+├── auth/callback/       # Supabase email confirmation redirect handler
+└── globals.css          # CSS variables, warm orange theme
+
+lib/supabase/
+├── client.ts            # createBrowserClient() — use in "use client" components
+└── server.ts            # createServerClient() with cookies — use in Server Components
+
+proxy.ts                 # Route guard (Next.js 16 name for middleware.ts)
 ```
 
-**Key Features:**
-- **API Base URL**: Hardcoded in `script.js:1` as `http://localhost:8000`
-- **Status Indicator**: Real-time API connection status check on page load
-- **Form Validation**: Client-side validation before API submission
-- **Loading States**: Button spinner during API calls
-- **Results Display**: Dynamic content injection with animation
+**Next.js 16 specific:** The middleware file is named `proxy.ts`, NOT `middleware.ts`. The exported function is `proxy()`, not `middleware()`. This is a breaking change from Next.js 15.
 
 ### API Endpoints
 
-- `GET /` - Health check endpoint
-- `POST /study/` - Generate study recommendations
-  - Request: `{ time: number, subject: string, level: string }`
-  - Response: `{ id: number, time: number, subject: string, level: string, recommendation: string }`
-- `GET /study/` - List all study sessions (in-memory database)
-- `GET /study/{study_id}` - Get specific study session
+All `/study/` routes require `Authorization: Bearer <supabase-jwt>` header.
+
+- `GET /` — health check (public)
+- `GET /health` — health check (public)
+- `GET /db-test` — DB connectivity check (public)
+- `POST /study/` — create study session (auth required, rate limited 5/min)
+- `GET /study/` — list user's sessions (auth required, scoped to user_id)
+- `GET /study/{id}` — get specific session (auth required, scoped to user_id)
 
 ### Data Flow
 
-1. User submits form in frontend (`script.js:68-101`)
-2. Frontend sends POST to `/study/` endpoint
-3. Router (`routers/study.py:17`) receives request, validates with Pydantic schema
-4. Service (`services/study.py:11`) calls Claude API with prompt template
-5. Response includes AI-generated study recommendation
-6. Router stores result in in-memory database and returns to frontend
-7. Frontend displays recommendation in results card
+1. User logs in via `/login` → Supabase sets session cookie
+2. `proxy.ts` validates session on every request; unauthenticated → redirect to `/login`
+3. `page.tsx` reads session token via `createClient().auth.getSession()`
+4. Frontend sends `POST /study/` with `Authorization: Bearer <token>`
+5. FastAPI `auth.py` verifies JWT using `SUPABASE_JWT_SECRET` (audience: `"authenticated"`)
+6. Router creates `StudySession` with `user_id` from JWT `sub` claim
+7. `services/study.py` calls Claude API → returns JSON study plan
+8. Row stored in Supabase PostgreSQL; response returned to frontend
+
+---
 
 ## Important Implementation Notes
 
+### Supabase Connection
+- **Use Session Pooler** (port 5432): `aws-X-region.pooler.supabase.com:5432` — works on IPv4
+- **Do NOT use Direct Connection**: IPv6-only, fails on most home/office networks
+- **Do NOT use Transaction Pooler** without enabling the IPv4 add-on (costs extra)
+- URL prefix must be `postgresql+psycopg://` for psycopg3 — `database.py` auto-converts `postgres://` and `postgresql://`
+- Use `psycopg[binary]` (not `psycopg`) to avoid arm64/x86_64 libpq architecture mismatch
+
+### Authentication
+- JWT verification uses `PyJWT` — **not** `python-jose` (has unfixed CVEs, unmaintained)
+- Supabase JWTs have `aud="authenticated"` — must pass `audience="authenticated"` to `jwt.decode()`
+- `SUPABASE_JWT_SECRET` missing → raises `RuntimeError` at startup (same pattern as `DATABASE_URL`)
+- `user_id` in models is UUID type; wrap `uuid.UUID(sub_claim)` in try/except to avoid unhandled 500
+- Never return raw exception strings from JWT errors — use static messages only
+
+### Supabase Custom SMTP
+- **Leave "Enable custom SMTP" OFF for development** — turning it on with empty fields breaks all signups
+- Only configure custom SMTP in production with all fields filled
+
+### Alembic Migrations
+- Adding a `NOT NULL` column to an existing table requires a `server_default` or two-step migration (add nullable → backfill → alter to NOT NULL)
+- `alembic/env.py` loads `.env` via `load_dotenv()` so migrations can run standalone
+- Never edit migration files after they've been applied to production
+
 ### Environment Variables
-- Backend requires `ANTHROPIC_API_KEY` in `backend/.env`
-- No environment variables needed for frontend
-- In production, set backend secrets in Elastic Beanstalk environment settings (not committed to repo)
+- Backend: `ANTHROPIC_API_KEY`, `DATABASE_URL`, `SUPABASE_JWT_SECRET`, `SUPABASE_URL`
+- Frontend: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_API_URL`
+- Supabase now calls the anon key "publishable key" in newer dashboard versions
+- Never commit `.env` or `.env.local` — only `.env.example` with placeholders
 
-### CORS Configuration
-- Backend allows origins: `localhost:3000`, `localhost:5500`, `127.0.0.1:3000`, `127.0.0.1:5500`
-- When adding new frontend ports, update `main.py:8-13`
+### CORS
+- Backend allows: `localhost:3000`, `localhost:5500`, `127.0.0.1:3000/5500`, Vercel URLs
+- Configurable via `CORS_ORIGINS` env var (comma-separated)
+- `allow_credentials=True` is required for cookie-based auth
 
-### AI Model Configuration
-- Using `anthropic` Python SDK (NOT OpenAI SDK)
-- Import: `from anthropic import Anthropic`
-- Model: `claude-opus-4-6` (configurable in `services/study.py:14`)
-- Response handling uses `TextBlock` type checking
+### Frontend Auth Pattern
+- Browser-side auth: `createClient()` from `lib/supabase/client.ts`
+- Server-side auth: `createClient()` from `lib/supabase/server.ts` (async, reads cookies)
+- In client components: use `getSession()` to read the already-validated session token
+- In proxy.ts: use `getUser()` (validates against Supabase server on every request)
+- Session token is passed to FastAPI as `Authorization: Bearer <access_token>`
 
-### Styling System
-- CSS variables defined in `:root` selector (`style.css:8-33`)
-- Color scheme: warm dark theme with orange primary (`--primary: #f97316`)
-- Uses `rem` units for responsive spacing
-- Mobile breakpoint at 480px
+---
 
-### Current Limitations
-- No persistent database (data lost on server restart)
-- No user authentication
-- No error recovery for failed AI API calls
-- Frontend hardcodes backend URL (no environment configuration)
+## Security Audit Checklist
 
-## Security Audit And Checks
+Apply before every commit or deployment affecting the backend.
 
-Apply this checklist to all backend-affecting changes before commit or deployment.
+1. **Secrets** — No real secrets in tracked files. `.env` gitignored. `.env.example` has placeholders only.
+2. **Auth** — All non-public routes have `Depends(get_current_user_id)`. Missing `SUPABASE_JWT_SECRET` crashes at startup.
+3. **Error responses** — No raw exception strings returned to clients. Static messages only.
+4. **Input validation** — All request bodies validated by Pydantic schemas.
+5. **Database** — `DATABASE_URL` from env only. ORM/parameterized queries only. Schema changes via Alembic only.
+6. **Dependencies** — No unnecessary packages. `psycopg[binary]` not `psycopg`. `PyJWT` not `python-jose`.
+7. **CORS** — Explicit origins list, not wildcard, in production.
 
-1. Secrets and config
-- Do not commit real secrets (`ANTHROPIC_API_KEY`, database passwords, tokens).
-- Keep `.env` local only; keep `.env.example` as placeholders.
-- If a secret is exposed, rotate immediately and replace all local copies.
-
-2. API hardening
-- Protect non-public routes with authentication and authorization.
-- Do not return raw exception strings to clients.
-- Validate all request payloads with Pydantic schemas.
-- Keep CORS origins explicit for production environments.
-
-3. Database hardening
-- Use `DATABASE_URL` from environment, no inline credentials.
-- Prefer ORM/parameterized access patterns only.
-- Add constraints/indexes through migrations, not ad-hoc manual edits.
-
-4. Runtime and dependencies
-- Review dependency additions for necessity and security impact.
-- Ensure Docker runs as non-root user.
-- Restrict docs/openapi exposure in production when required.
-
-5. Security review output expectations
-- List findings ordered by severity (`critical` to `low`).
-- Include file references and concrete fixes.
-- Call out open questions and residual risk.
+---
 
 ## Commit Message Style
-- Write commit messages in a natural, human style — no AI-sounding language
-- Keep messages concise and lowercase where appropriate
-- Use imperative mood (e.g., "add backend API", not "Added backend API")
-- Do NOT include "Co-Authored-By" lines or AI attribution in commits
+- Natural, human style — no AI-sounding language
+- Concise, lowercase where appropriate
+- Imperative mood (`add`, `fix`, `update` — not `added`, `fixed`)
+- No `Co-Authored-By` lines or AI attribution
+- Prefix with `feat:`, `fix:`, `chore:` etc. where helpful
 
-## Future Considerations
+---
 
-If implementing database persistence:
-- `database.py` is placeholder for SQLAlchemy setup
-- Update `routers/study.py` to use real DB instead of in-memory list
-- Add migration scripts
+## Backend CI/CD (GitHub Actions + Elastic Beanstalk)
 
-If adding authentication:
-- Update CORS to handle credentials
-- Add auth middleware to FastAPI app
-- Frontend needs to store/send auth tokens
+Pipeline: `.github/workflows/aws-ci-cd.yml`
+- CI runs on PRs: dependency install, syntax/import checks, docker build
+- Deploy on push to `main`: creates EB application version, updates target environment
+
+Required GitHub variables: `AWS_REGION`, `EB_APP_NAME`, `EB_ENV_NAME`, `EB_S3_BUCKET`
+Required GitHub secret: `AWS_ROLE_TO_ASSUME` (IAM role via GitHub OIDC)
+
+Set all backend env vars (`DATABASE_URL`, `SUPABASE_JWT_SECRET`, etc.) in Elastic Beanstalk environment settings — never in committed files.

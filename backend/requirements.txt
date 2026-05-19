@@ -4,5 +4,7 @@ sqlalchemy
 python-dotenv
 anthropic
 pydantic
-psycopg
+psycopg[binary]
 slowapi
+alembic
+PyJWT[cryptography]>=2.8.0

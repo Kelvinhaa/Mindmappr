@@ -1,31 +1,30 @@
 import os
-from typing import Any, cast
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-# Reads PostgreSQL URL from env for production. Falls back to SQLite locally.
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./mindmappr.db")
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL environment variable is not set")
 
-engine_kwargs = {}
-if DATABASE_URL.startswith("sqlite"):
-	# `check_same_thread=False` is required when SQLite is used with FastAPI.
-	engine_kwargs["connect_args"] = {"check_same_thread": False}
+# Supabase connection strings use "postgres://" but SQLAlchemy 2 requires "postgresql+psycopg://"
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg://", 1)
+elif DATABASE_URL.startswith("postgresql://") and "+psycopg" not in DATABASE_URL:
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
 
-engine = create_engine(DATABASE_URL, pool_pre_ping=True, **engine_kwargs)
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# Testing CI/CD pipeline with github actions
+
 def get_db():
-	db = SessionLocal()
-	try:
-		yield db
-	finally:
-		db.close()
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 
 def test_db_connection():
-	connection = cast(Any, engine.connect())
-	try:
-		connection.execute(text("SELECT 1"))
-	finally:
-		connection.close()
+    with engine.connect() as conn:
+        conn.execute(text("SELECT 1"))
