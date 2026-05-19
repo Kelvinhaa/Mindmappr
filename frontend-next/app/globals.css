@@ -165,8 +165,49 @@ select {
 
 .form-success { color: var(--success); font-size: 0.85rem; padding: 0.75rem 1rem; background: rgba(22,163,74,0.06); border: 1px solid rgba(22,163,74,0.2); border-radius: var(--radius); margin-bottom: 0.5rem; }
 
-.user-menu { display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-top: 0.75rem; }
-.user-email { font-size: 0.8rem; color: var(--muted-foreground); }
+.user-menu {
+  position: fixed;
+  top: 1rem;
+  right: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  padding: 0.35rem 0.35rem 0.35rem 0.875rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
+  z-index: 50;
+}
+.user-avatar {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.user-email { font-size: 0.775rem; color: var(--muted-foreground); font-weight: 500; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btn-signout {
+  height: 1.75rem;
+  padding: 0 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 9999px;
+  border: none;
+  background: var(--muted);
+  color: var(--secondary-foreground);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+.btn-signout:hover { background: rgba(234,88,12,0.08); color: var(--primary); }
 
 :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 ::-webkit-scrollbar { width: 8px; }

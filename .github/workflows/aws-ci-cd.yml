@@ -19,7 +19,6 @@ env:
   EB_APP_NAME: ${{ vars.EB_APP_NAME }}
   EB_ENV_NAME: ${{ vars.EB_ENV_NAME }}
   EB_S3_BUCKET: ${{ vars.EB_S3_BUCKET }}
-  DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
 jobs:
   ci:
@@ -42,6 +41,10 @@ jobs:
           pip install -r requirements.txt
 
       - name: Validate app import and syntax
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SUPABASE_JWT_SECRET: ${{ secrets.SUPABASE_JWT_SECRET }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           python -m compileall backends
           python -c "from backends.main import app; print(app.title)"

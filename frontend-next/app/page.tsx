@@ -110,8 +110,9 @@ export default function Home() {
         </div>
         {userEmail && (
           <div className="user-menu">
+            <div className="user-avatar">{userEmail[0]}</div>
             <span className="user-email">{userEmail}</span>
-            <button className="btn btn-ghost" onClick={handleSignOut}>Sign out</button>
+            <button className="btn-signout" onClick={handleSignOut}>Sign out</button>
           </div>
         )}
         <p className="tagline">Discover study techniques tailored to your learning style</p>
