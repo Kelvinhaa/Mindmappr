@@ -60,6 +60,7 @@ jobs:
       - name: Validate deploy configuration
         env:
           ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           missing=0
 
