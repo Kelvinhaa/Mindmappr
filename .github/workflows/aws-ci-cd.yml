@@ -19,7 +19,7 @@ env:
   EB_APP_NAME: ${{ vars.EB_APP_NAME }}
   EB_ENV_NAME: ${{ vars.EB_ENV_NAME }}
   EB_S3_BUCKET: ${{ vars.EB_S3_BUCKET }}
-  DATABASE_URL: ${{ vars.DATABASE_URL}}
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
 jobs:
   ci:
