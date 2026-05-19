@@ -5,7 +5,9 @@ from fastapi import HTTPException, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 _bearer_scheme = HTTPBearer(auto_error=False)
-_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET", "")
+_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
+if not _JWT_SECRET:
+    raise RuntimeError("SUPABASE_JWT_SECRET environment variable is not set")
 _ALGORITHM = "HS256"
 
 
@@ -27,8 +29,8 @@ def get_current_user_id(
         )
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired")
-    except jwt.InvalidTokenError as exc:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid token: {exc}")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
     user_id: str | None = payload.get("sub")
     if not user_id:

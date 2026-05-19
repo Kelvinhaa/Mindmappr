@@ -1,5 +1,5 @@
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 from backends.database import get_db
 from backends.dependencies import limiter
@@ -37,8 +37,13 @@ def create_study(
         goal=payload.goal,
     )
 
+    try:
+        parsed_user_id = uuid.UUID(user_id)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user identity in token")
+
     session = StudySession(
-        user_id=uuid.UUID(user_id),
+        user_id=parsed_user_id,
         time=payload.time,
         subject=payload.subject,
         level=payload.level,
