@@ -12,6 +12,7 @@ export interface StudyRecommendation {
 
 export interface StudyResponse {
   id: number;
+  user_id: string;
   time: number;
   subject: string;
   level: string;
