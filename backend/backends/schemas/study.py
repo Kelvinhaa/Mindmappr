@@ -1,3 +1,4 @@
+import uuid
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, List
 
@@ -25,6 +26,7 @@ class StudyResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    user_id: uuid.UUID
     time: int
     subject: str
     level: str

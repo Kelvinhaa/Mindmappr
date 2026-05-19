@@ -1,11 +1,12 @@
-from sqlalchemy import Column, Integer, String, JSON
+from sqlalchemy import Column, Integer, String, JSON, Uuid
 from backends.database import Base
 
-# Database table 
+
 class StudySession(Base):
     __tablename__ = "study_sessions"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Uuid(as_uuid=True), nullable=False, index=True)
     time = Column(Integer, nullable=False)
     subject = Column(String, nullable=False)
     level = Column(String, nullable=False)
