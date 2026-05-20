@@ -7,4 +7,5 @@ pydantic
 psycopg[binary]
 slowapi
 alembic
-PyJWT[cryptography]>=2.8.0
+PyJWT>=2.8.0
+cryptography
