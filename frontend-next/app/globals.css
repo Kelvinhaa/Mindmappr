@@ -159,6 +159,11 @@ select {
 .results-loaded { animation: fadeIn 0.4s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
+.password-hints { list-style: none; padding: 0; margin: 0.5rem 0 0; display: flex; flex-direction: column; gap: 0.25rem; }
+.password-hints li { font-size: 0.8rem; color: var(--muted-foreground); padding-left: 1.25rem; position: relative; transition: color 0.2s; }
+.password-hints li::before { content: "○"; position: absolute; left: 0; }
+.password-hints li.hint-met { color: #16a34a; }
+.password-hints li.hint-met::before { content: "✓"; }
 .auth-link { text-align: center; margin-top: 1.25rem; font-size: 0.875rem; color: var(--muted-foreground); }
 .auth-link a { color: var(--primary); text-decoration: none; font-weight: 500; }
 .auth-link a:hover { text-decoration: underline; }

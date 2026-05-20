@@ -1,14 +1,12 @@
 "use client";
 
-import { Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 function LoginForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const registered = searchParams.get("registered");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -37,12 +35,6 @@ function LoginForm() {
     <main className="main-card">
       <h2 className="card-title">Sign In</h2>
       <p className="card-description">Welcome back — sign in to access your study plans.</p>
-
-      {registered && (
-        <div className="form-success">
-          Account created! Check your email to confirm, then sign in.
-        </div>
-      )}
 
       <form className="form" onSubmit={handleSubmit}>
         <div className="form-group">
@@ -101,9 +93,7 @@ export default function LoginPage() {
         </div>
         <p className="tagline">Discover study techniques tailored to your learning style</p>
       </header>
-      <Suspense>
-        <LoginForm />
-      </Suspense>
+      <LoginForm />
     </div>
   );
 }

@@ -29,7 +29,8 @@ export default function RegisterPage() {
       return;
     }
 
-    router.push("/login?registered=1");
+    router.push("/");
+    router.refresh();
   }
 
   return (
@@ -70,6 +71,11 @@ export default function RegisterPage() {
               minLength={6}
               required
             />
+            <ul className="password-hints">
+              <li className={password.length >= 6 ? "hint-met" : ""}>At least 6 characters</li>
+              <li className={/[A-Z]/.test(password) ? "hint-met" : ""}>One uppercase letter</li>
+              <li className={/[0-9]/.test(password) ? "hint-met" : ""}>One number</li>
+            </ul>
           </div>
 
           {error && <div className="form-error">{error}</div>}

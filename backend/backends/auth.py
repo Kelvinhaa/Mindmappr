@@ -7,7 +7,8 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 _bearer_scheme = HTTPBearer(auto_error=False)
 _JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
 if not _JWT_SECRET:
-    raise RuntimeError("SUPABASE_JWT_SECRET environment variable is not set")
+    import logging
+    logging.warning("SUPABASE_JWT_SECRET is not set — all authenticated requests will fail until env vars are configured")
 _ALGORITHM = "HS256"
 
 
