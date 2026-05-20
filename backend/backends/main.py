@@ -11,7 +11,7 @@ from backends.database import test_db_connection
 from backends.dependencies import limiter
 from backends.routers.study import router as study_router
 
-app = FastAPI(title="Mindmappr")
+app = FastAPI(title="Mindmappr", redirect_slashes=False)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 

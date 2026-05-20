@@ -14,7 +14,7 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=list[StudyResponse])
+@router.get("", response_model=list[StudyResponse])
 def list_studies(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
@@ -22,7 +22,7 @@ def list_studies(
     return db.query(StudySession).filter(StudySession.user_id == user_id).all()
 
 
-@router.post("/", response_model=StudyResponse)
+@router.post("", response_model=StudyResponse)
 @limiter.limit("5/minute")
 def create_study(
     request: Request,

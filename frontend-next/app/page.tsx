@@ -59,7 +59,7 @@ export default function Home() {
     setUiState({ status: "loading", meta });
 
     try {
-      const res = await fetch(`${API_BASE}/study/`, {
+      const res = await fetch(`${API_BASE}/study`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
