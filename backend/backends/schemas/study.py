@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, List
 
@@ -32,3 +33,29 @@ class StudyResponse(BaseModel):
     level: str
     goal: Optional[str] = None
     recommendation: StudyRecommendation
+    created_at: Optional[datetime] = None
+    next_review_at: Optional[datetime] = None
+    review_count: int = 0
+    interval_days: int = 1
+
+
+class PreviewResponse(BaseModel):
+    subject: str
+    time: int
+    level: str
+    goal: Optional[str]
+    recommendation: StudyRecommendation
+
+
+class ReviewRequest(BaseModel):
+    quality: int  # 0=Again, 2=Hard, 4=Good, 5=Easy
+
+
+class ReviewResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    next_review_at: datetime
+    review_count: int
+    interval_days: int
+    ease_factor: float

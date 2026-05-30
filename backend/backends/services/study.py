@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 from anthropic import Anthropic
 from anthropic.types import TextBlock
@@ -97,3 +98,28 @@ Respond with JSON only."""
     except Exception as e:
         print(f"[study-service] API error, using fallback: {e}")
         return _fallback_recommendation(subject, time, level)
+
+
+def apply_sm2(
+    ease_factor: float, interval_days: int, review_count: int, quality: int
+) -> tuple[int, float, int]:
+    """
+    SM-2 spaced repetition algorithm.
+    quality: 0=Again, 2=Hard, 4=Good, 5=Easy
+    Returns (new_interval_days, new_ease_factor, new_review_count)
+    """
+    quality = max(0, min(5, quality))
+    new_ef = ease_factor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02))
+    new_ef = max(1.3, new_ef)
+
+    if quality < 3:
+        return 1, new_ef, review_count + 1
+
+    if review_count == 0:
+        new_interval = 1
+    elif review_count == 1:
+        new_interval = 6
+    else:
+        new_interval = round(interval_days * ease_factor)
+
+    return new_interval, new_ef, review_count + 1

@@ -19,6 +19,7 @@ export default function Home() {
   const [formError, setFormError] = useState<string>("");
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isGuestResult, setIsGuestResult] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -59,11 +60,15 @@ export default function Home() {
     setUiState({ status: "loading", meta });
 
     try {
-      const res = await fetch(`${API_BASE}/study`, {
+      const endpoint = accessToken
+        ? `${API_BASE}/study`
+        : `${API_BASE}/study/preview`;
+
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(accessToken ? { "Authorization": `Bearer ${accessToken}` } : {}),
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         },
         body: JSON.stringify({ time, subject, level, goal: goal || null }),
       });
@@ -83,6 +88,7 @@ export default function Home() {
 
       const data: StudyResponse = await res.json();
       setUiState({ status: "success", data });
+      setIsGuestResult(!accessToken);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong.";
       setUiState({ status: "error", message });
@@ -97,6 +103,7 @@ export default function Home() {
   function handleClear() {
     setUiState({ status: "idle" });
     setFormError("");
+    setIsGuestResult(false);
   }
 
   const isLoading = uiState.status === "loading";
@@ -108,11 +115,17 @@ export default function Home() {
           <span className="logo-icon">🧠</span>
           <span className="logo-text">MindMappr</span>
         </div>
-        {userEmail && (
+        {userEmail ? (
           <div className="user-menu">
             <div className="user-avatar">{userEmail[0]}</div>
             <span className="user-email">{userEmail}</span>
+            <a href="/dashboard" className="btn btn-ghost">Dashboard</a>
             <button className="btn-signout" onClick={handleSignOut}>Sign out</button>
+          </div>
+        ) : (
+          <div className="auth-buttons">
+            <a href="/login" className="btn btn-ghost">Log in</a>
+            <a href="/register" className="btn btn-primary">Sign up</a>
           </div>
         )}
         <p className="tagline">Discover study techniques tailored to your learning style</p>
@@ -245,6 +258,19 @@ export default function Home() {
             )}
           </div>
         </section>
+      )}
+
+      {isGuestResult && (
+        <div className="signup-cta">
+          <div className="signup-cta-text">
+            <strong>Save this plan &amp; track your reviews</strong>
+            <span>Create a free account to store sessions and get spaced repetition reminders.</span>
+          </div>
+          <div className="signup-cta-actions">
+            <a href="/register" className="btn btn-primary">Sign up free</a>
+            <a href="/login" className="btn btn-ghost">Log in</a>
+          </div>
+        </div>
       )}
     </div>
   );
