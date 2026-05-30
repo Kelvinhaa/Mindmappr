@@ -115,12 +115,17 @@ export default function Home() {
           <span className="logo-icon">🧠</span>
           <span className="logo-text">MindMappr</span>
         </div>
-        {userEmail && (
+        {userEmail ? (
           <div className="user-menu">
             <div className="user-avatar">{userEmail[0]}</div>
             <span className="user-email">{userEmail}</span>
             <a href="/dashboard" className="btn btn-ghost">Dashboard</a>
             <button className="btn-signout" onClick={handleSignOut}>Sign out</button>
+          </div>
+        ) : (
+          <div className="auth-buttons">
+            <a href="/login" className="btn btn-ghost">Log in</a>
+            <a href="/register" className="btn btn-primary">Sign up</a>
           </div>
         )}
         <p className="tagline">Discover study techniques tailored to your learning style</p>

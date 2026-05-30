@@ -220,6 +220,9 @@ select {
 ::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }
 
+/* Guest auth buttons in header */
+.auth-buttons { display: flex; gap: 0.5rem; align-items: center; }
+
 /* Sign-up CTA */
 .signup-cta {
   display: flex;
