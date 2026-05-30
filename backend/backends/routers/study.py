@@ -4,8 +4,9 @@ from sqlalchemy.orm import Session
 from backends.database import get_db
 from backends.dependencies import limiter
 from backends.models import StudySession
-from backends.schemas.study import StudyRequest, StudyResponse, PreviewResponse
-from backends.services.study import generate_recommendation
+from datetime import datetime, timedelta, timezone
+from backends.schemas.study import StudyRequest, StudyResponse, PreviewResponse, ReviewRequest, ReviewResponse
+from backends.services.study import generate_recommendation, apply_sm2
 from backends.auth import get_current_user_id
 
 router = APIRouter(
@@ -91,4 +92,32 @@ def get_study(
     )
     if session is None:
         raise HTTPException(status_code=404, detail="Study session not found")
+    return session
+
+
+@router.post("/{session_id}/review", response_model=ReviewResponse)
+def review_session(
+    session_id: int,
+    body: ReviewRequest,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    session = db.query(StudySession).filter(
+        StudySession.id == session_id,
+        StudySession.user_id == user_id,
+    ).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    new_interval, new_ef, new_count = apply_sm2(
+        session.ease_factor, session.interval_days, session.review_count, body.quality
+    )
+    now = datetime.now(timezone.utc)
+    session.last_reviewed_at = now
+    session.next_review_at = now + timedelta(days=new_interval)
+    session.review_count = new_count
+    session.ease_factor = new_ef
+    session.interval_days = new_interval
+    db.commit()
+    db.refresh(session)
     return session
