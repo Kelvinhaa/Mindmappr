@@ -148,6 +148,7 @@ select {
 .form-hint { font-size: 0.775rem; color: var(--muted-foreground); }
 .optional-badge { font-size: 0.7rem; font-weight: 400; color: var(--muted-foreground); background: var(--muted); padding: 0.1rem 0.4rem; border-radius: 4px; margin-left: 0.375rem; }
 .form-error { color: var(--error); font-size: 0.85rem; padding: 0.75rem 1rem; background: rgba(220,38,38,0.06); border: 1px solid rgba(220,38,38,0.15); border-radius: var(--radius); }
+.field-error { color: var(--error); font-size: 0.8rem; margin-top: 0.25rem; }
 
 .skeleton-container { display: flex; flex-direction: column; gap: 1rem; }
 .skeleton-block { background: linear-gradient(90deg, var(--muted) 25%, var(--secondary) 50%, var(--muted) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite ease-in-out; border-radius: var(--radius); }

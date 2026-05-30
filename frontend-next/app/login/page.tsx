@@ -3,19 +3,36 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
+
+const emailSchema = z.email("Please enter a valid email address");
 
 function LoginForm() {
   const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [emailError, setEmailError] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  function validateEmail(value: string): boolean {
+    const result = emailSchema.safeParse(value);
+    if (!result.success) {
+      setEmailError(result.error.issues[0].message);
+      return false;
+    }
+    setEmailError("");
+    return true;
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    if (!validateEmail(email)) return;
+
     setLoading(true);
 
     const supabase = createClient();
@@ -43,10 +60,12 @@ function LoginForm() {
             id="email"
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => { setEmail(e.target.value); if (emailError) setEmailError(""); }}
+            onBlur={(e) => { if (e.target.value) validateEmail(e.target.value); }}
             placeholder="you@example.com"
             required
           />
+          {emailError && <span className="field-error">{emailError}</span>}
         </div>
 
         <div className="form-group">
