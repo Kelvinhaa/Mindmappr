@@ -53,7 +53,7 @@ function LoginForm() {
       <h2 className="card-title">Sign In</h2>
       <p className="card-description">Welcome back — sign in to access your study plans.</p>
 
-      <form className="form" onSubmit={handleSubmit}>
+      <form className="form" onSubmit={handleSubmit} noValidate>
         <div className="form-group">
           <label htmlFor="email">Email</label>
           <input

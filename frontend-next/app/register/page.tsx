@@ -64,7 +64,7 @@ export default function RegisterPage() {
         <h2 className="card-title">Create Account</h2>
         <p className="card-description">Sign up to save and track your study sessions.</p>
 
-        <form className="form" onSubmit={handleSubmit}>
+        <form className="form" onSubmit={handleSubmit} noValidate>
           <div className="form-group">
             <label htmlFor="email">Email</label>
             <input
