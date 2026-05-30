@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from backends.database import get_db
 from backends.dependencies import limiter
 from backends.models import StudySession
-from backends.schemas.study import StudyRequest, StudyResponse
+from backends.schemas.study import StudyRequest, StudyResponse, PreviewResponse
 from backends.services.study import generate_recommendation
 from backends.auth import get_current_user_id
 
@@ -54,6 +54,28 @@ def create_study(
     db.commit()
     db.refresh(session)
     return session
+
+
+@router.post("/preview", response_model=PreviewResponse)
+@limiter.limit("3/hour")
+def preview_study(
+    request: Request,
+    body: StudyRequest,
+    db: Session = Depends(get_db),
+):
+    recommendation = generate_recommendation(
+        subject=body.subject,
+        level=body.level,
+        time=body.time,
+        goal=body.goal,
+    )
+    return PreviewResponse(
+        subject=body.subject,
+        time=body.time,
+        level=body.level,
+        goal=body.goal,
+        recommendation=recommendation,
+    )
 
 
 @router.get("/{study_id}", response_model=StudyResponse)

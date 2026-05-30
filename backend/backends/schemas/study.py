@@ -32,3 +32,11 @@ class StudyResponse(BaseModel):
     level: str
     goal: Optional[str] = None
     recommendation: StudyRecommendation
+
+
+class PreviewResponse(BaseModel):
+    subject: str
+    time: int
+    level: str
+    goal: Optional[str]
+    recommendation: StudyRecommendation
