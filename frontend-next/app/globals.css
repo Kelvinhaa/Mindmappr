@@ -237,6 +237,21 @@ select {
   height: 2.25rem;
   font-size: 0.8rem;
   padding: 0 0.875rem;
+  text-decoration: none;
+}
+.auth-buttons .btn-ghost {
+  color: var(--muted-foreground);
+  border-color: var(--border);
+}
+.auth-buttons .btn-primary {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.auth-buttons .btn-primary:hover:not(:disabled) {
+  background: var(--muted);
+  transform: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 /* Sign-up CTA */
