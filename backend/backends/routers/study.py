@@ -25,13 +25,13 @@ def list_studies(
 
 @router.post("", response_model=StudyResponse)
 @limiter.limit("5/minute")
-def create_study(
+async def create_study(
     request: Request,
     payload: StudyRequest,
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
 ):
-    recommendation = generate_recommendation(
+    recommendation = await generate_recommendation(
         subject=payload.subject,
         level=payload.level,
         time=payload.time,
@@ -59,12 +59,12 @@ def create_study(
 
 @router.post("/preview", response_model=PreviewResponse)
 @limiter.limit("3/hour")
-def preview_study(
+async def preview_study(
     request: Request,
     body: StudyRequest,
     db: Session = Depends(get_db),
 ):
-    recommendation = generate_recommendation(
+    recommendation = await generate_recommendation(
         subject=body.subject,
         level=body.level,
         time=body.time,

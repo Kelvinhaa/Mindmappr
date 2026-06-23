@@ -2,14 +2,14 @@ import json
 import os
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
-from anthropic import Anthropic
+from anthropic import AsyncAnthropic
 from anthropic.types import TextBlock
 from typing import Optional
 from backends.schemas.study import StudyRecommendation
 
 load_dotenv()
 
-client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+client = AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 SYSTEM_PROMPT = """You are an expert study coach who creates practical, specific study plans.
 You respond ONLY with valid JSON (no markdown, no code fences, no extra text).
@@ -55,7 +55,7 @@ def _fallback_recommendation(subject: str, time: int, level: str) -> StudyRecomm
     )
 
 
-def generate_recommendation(
+async def generate_recommendation(
     subject: str, level: str, time: int, goal: Optional[str] = None
 ) -> StudyRecommendation:
     goal_line = f"\n- Learning goal: {goal}" if goal else ""
@@ -68,8 +68,8 @@ def generate_recommendation(
 Respond with JSON only."""
 
     try:
-        response = client.messages.create(
-            model="claude-sonnet-4-6",
+        response = await client.messages.create(
+            model="claude-haiku-4-5",
             system=[{
                 "type": "text",
                 "text": SYSTEM_PROMPT,
