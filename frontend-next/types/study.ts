@@ -22,6 +22,7 @@ export interface StudyResponse {
   next_review_at?: string | null;
   review_count: number;
   interval_days: number;
+  stability: number;
 }
 
 export interface PreviewResponse {
@@ -38,6 +39,29 @@ export interface ReviewResponse {
   review_count: number;
   interval_days: number;
   ease_factor: number;
+  stability: number;
+}
+
+export interface ReviewQueueItem {
+  id: number;
+  subject: string;
+  level: string;
+  goal: string | null;
+  time: number;
+  review_count: number;
+  interval_days: number;
+  next_review_at: string | null;
+  days_overdue: number;
+  stability: number;
+  ease_factor: number;
+  recommendation: StudyRecommendation;
+}
+
+export interface StatsResponse {
+  total_sessions: number;
+  due_today: number;
+  reviewed_today: number;
+  avg_stability: number;
 }
 
 export interface StudyFormData {

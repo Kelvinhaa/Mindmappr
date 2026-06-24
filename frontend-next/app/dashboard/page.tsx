@@ -1,43 +1,79 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import type { StudyResponse, ReviewResponse } from "@/types/study";
+import type {
+  StudyResponse,
+  ReviewResponse,
+  ReviewQueueItem,
+  StatsResponse,
+} from "@/types/study";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
-const QUALITY_BUTTONS = [
-  { label: "Again", quality: 0, className: "review-btn-again" },
-  { label: "Hard",  quality: 2, className: "review-btn-hard"  },
-  { label: "Good",  quality: 4, className: "review-btn-good"  },
-  { label: "Easy",  quality: 5, className: "review-btn-easy"  },
+const RATING_BUTTONS = [
+  { label: "Again", rating: 1, cls: "review-btn review-btn-rating-1 review-btn-tall", sub: "< 1 day" },
+  { label: "Hard",  rating: 2, cls: "review-btn review-btn-rating-2 review-btn-tall", sub: "shorter"  },
+  { label: "Good",  rating: 3, cls: "review-btn review-btn-rating-3 review-btn-tall", sub: "on track" },
+  { label: "Easy",  rating: 4, cls: "review-btn review-btn-rating-4 review-btn-tall", sub: "longer"   },
 ] as const;
-
-function isDue(session: StudyResponse): boolean {
-  if (!session.next_review_at) return session.review_count === 0;
-  return new Date(session.next_review_at) <= new Date();
-}
 
 function formatNextReview(iso: string | null | undefined): string {
   if (!iso) return "Not scheduled";
-  const diffDays = Math.round(
-    (new Date(iso).getTime() - Date.now()) / 86400000
-  );
-  if (diffDays < 0) return "Overdue";
+  const diffDays = Math.round((new Date(iso).getTime() - Date.now()) / 86400000);
+  if (diffDays < 0)  return "Overdue";
   if (diffDays === 0) return "Due today";
   if (diffDays === 1) return "Tomorrow";
   return `In ${diffDays} days`;
 }
 
+function stabilityPct(stability: number): number {
+  return Math.min(100, Math.round((stability / 30) * 100));
+}
+
+function urgencyCardClass(item: ReviewQueueItem): string {
+  return item.days_overdue > 1
+    ? "session-card session-card--overdue"
+    : "session-card session-card--due";
+}
+
+function urgencyBadge(item: ReviewQueueItem): { cls: string; label: string } {
+  if (!item.next_review_at) return { cls: "due-badge due-badge--today", label: "New — review now" };
+  if (item.days_overdue > 1) return { cls: "due-badge due-badge--overdue", label: `${Math.floor(item.days_overdue)}d overdue` };
+  return { cls: "due-badge due-badge--today", label: "Due today" };
+}
+
 export default function Dashboard() {
   const router = useRouter();
-  const [sessions, setSessions] = useState<StudyResponse[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState<string | null>(null);
-  const [reviewing, setReviewing] = useState<StudyResponse | null>(null);
+  const [queue, setQueue]       = useState<ReviewQueueItem[]>([]);
+  const [upcoming, setUpcoming] = useState<StudyResponse[]>([]);
+  const [stats, setStats]       = useState<StatsResponse | null>(null);
+  const [loading, setLoading]   = useState(true);
+  const [token, setToken]       = useState<string | null>(null);
+  const [reviewing, setReviewing] = useState<ReviewQueueItem | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [confirmations, setConfirmations] = useState<Record<number, string>>({});
+
+  const loadData = useCallback(async (t: string) => {
+    const headers = { Authorization: `Bearer ${t}` };
+    const [qRes, sRes, stRes] = await Promise.all([
+      fetch(`${API_BASE}/study/review-queue`, { headers }),
+      fetch(`${API_BASE}/study`,              { headers }),
+      fetch(`${API_BASE}/study/stats`,        { headers }),
+    ]);
+
+    const queueData: ReviewQueueItem[] = qRes.ok  ? await qRes.json()  : [];
+    const allData:   StudyResponse[]   = sRes.ok  ? await sRes.json()  : [];
+    const statsData: StatsResponse | null = stRes.ok ? await stRes.json() : null;
+
+    const dueIds = new Set(queueData.map(q => q.id));
+    setQueue(queueData);
+    setUpcoming(allData.filter(s => !dueIds.has(s.id)));
+    setStats(statsData);
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
     const supabase = createClient();
@@ -45,14 +81,11 @@ export default function Dashboard() {
       if (!session) { router.push("/login"); return; }
       const t = session.access_token;
       setToken(t);
-      fetch(`${API_BASE}/study`, { headers: { Authorization: `Bearer ${t}` } })
-        .then(res => (res.ok ? res.json() : []))
-        .then(data => setSessions(data))
-        .finally(() => setLoading(false));
+      loadData(t);
     });
-  }, [router]);
+  }, [router, loadData]);
 
-  async function submitReview(quality: number) {
+  async function submitReview(rating: number) {
     if (!reviewing || !token) return;
     setSubmitting(true);
     try {
@@ -62,13 +95,20 @@ export default function Dashboard() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ quality }),
+        body: JSON.stringify({ rating }),
       });
       if (res.ok) {
         const updated: ReviewResponse = await res.json();
-        setSessions(prev =>
-          prev.map(s => s.id === reviewing.id ? { ...s, ...updated } : s)
-        );
+        const days = updated.interval_days;
+        const msg = days === 1 ? "Tomorrow" : `In ${days} days`;
+
+        setQueue(prev => prev.filter(s => s.id !== reviewing.id));
+        setStats(prev => prev ? {
+          ...prev,
+          due_today: Math.max(0, prev.due_today - 1),
+          reviewed_today: prev.reviewed_today + 1,
+        } : prev);
+        setConfirmations(prev => ({ ...prev, [reviewing.id]: `Next review: ${msg}` }));
         setReviewing(null);
       }
     } finally {
@@ -76,77 +116,136 @@ export default function Dashboard() {
     }
   }
 
-  const due = sessions.filter(isDue);
-  const upcoming = sessions.filter(s => !isDue(s));
-
   return (
-    <div className="container">
-      <header className="header">
-        <div className="logo">
-          <span className="logo-icon">🧠</span>
-          <span className="logo-text">MindMappr</span>
+    <div className="dash-page">
+      <header className="dash-topbar">
+        <div className="dash-topbar-logo">
+          <span className="dash-topbar-icon">🧠</span>
+          <span className="dash-topbar-name">MindMappr</span>
         </div>
-        <nav className="dash-nav">
+        <nav className="dash-topbar-nav">
           <Link href="/" className="btn btn-ghost">New Plan</Link>
         </nav>
-        <p className="tagline">Your study history and review schedule</p>
       </header>
 
-      <main>
+      <div className="dash-body">
         <h2 className="dash-heading">Study Dashboard</h2>
+
+        {/* Stats bar */}
+        {stats && (
+          <div className="stats-bar">
+            <div className="stat-card">
+              <div className="stat-value">{stats.total_sessions}</div>
+              <div className="stat-label">Sessions</div>
+            </div>
+            <div className="stat-card stat-card--due">
+              <div className="stat-value">{stats.due_today}</div>
+              <div className="stat-label">Due Today</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">{stats.reviewed_today}</div>
+              <div className="stat-label">Reviewed Today</div>
+            </div>
+          </div>
+        )}
 
         {loading && <p className="dash-empty">Loading sessions…</p>}
 
-        {!loading && due.length > 0 && (
+        {/* Due for Review */}
+        {!loading && queue.length > 0 && (
           <section className="dash-section">
-            <h3 className="dash-section-title">Due for Review ({due.length})</h3>
+            <div className="dash-section-header">
+              <h3 className="dash-section-title">Due for Review</h3>
+              <span className="dash-section-count dash-section-count--due">{queue.length}</span>
+            </div>
             <div className="session-list">
-              {due.map(s => (
-                <div key={s.id} className="session-card session-card--due">
-                  <div className="session-info">
-                    <span className="session-subject">{s.subject}</span>
-                    <span className="session-meta">{s.level} · {s.time} min · {s.review_count}× reviewed</span>
-                    <span className="session-due due-badge">
-                      {s.next_review_at ? formatNextReview(s.next_review_at) : "New — review now"}
-                    </span>
+              {queue.map(s => {
+                const badge = urgencyBadge(s);
+                return (
+                  <div key={s.id} className={urgencyCardClass(s)}>
+                    <div className="session-info">
+                      <span className="session-subject">{s.subject}</span>
+                      <span className="session-meta">
+                        {s.level} · {s.time} min · {s.review_count}× reviewed
+                      </span>
+                      {confirmations[s.id] ? (
+                        <span className="review-confirmed">
+                          <span>✓</span>
+                          {confirmations[s.id]}
+                        </span>
+                      ) : (
+                        <span className={badge.cls}>{badge.label}</span>
+                      )}
+                      <div className="stability-bar-wrap">
+                        <div className="stability-bar-track">
+                          <div
+                            className="stability-bar-fill"
+                            style={{ width: `${stabilityPct(s.stability)}%` }}
+                          />
+                        </div>
+                        <span className="stability-label">
+                          {s.stability > 0 ? `S: ${s.stability.toFixed(1)}d` : "New"}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => setReviewing(s)}
+                    >
+                      Review
+                    </button>
                   </div>
-                  <button className="btn btn-primary" onClick={() => setReviewing(s)}>
-                    Review
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         )}
 
+        {/* Coming Up */}
         {!loading && upcoming.length > 0 && (
           <section className="dash-section">
-            <h3 className="dash-section-title">Upcoming</h3>
+            <div className="dash-section-header">
+              <h3 className="dash-section-title">Coming Up</h3>
+              <span className="dash-section-count">{upcoming.length}</span>
+            </div>
             <div className="session-list">
               {upcoming.map(s => (
                 <div key={s.id} className="session-card">
                   <div className="session-info">
                     <span className="session-subject">{s.subject}</span>
-                    <span className="session-meta">{s.level} · {s.time} min · {s.review_count}× reviewed</span>
+                    <span className="session-meta">
+                      {s.level} · {s.time} min · {s.review_count}× reviewed
+                    </span>
                     <span className="session-due">{formatNextReview(s.next_review_at)}</span>
+                    <div className="stability-bar-wrap">
+                      <div className="stability-bar-track">
+                        <div
+                          className="stability-bar-fill"
+                          style={{ width: `${stabilityPct(s.stability ?? 0)}%` }}
+                        />
+                      </div>
+                      <span className="stability-label">
+                        {(s.stability ?? 0) > 0 ? `S: ${s.stability.toFixed(1)}d` : "New"}
+                      </span>
+                    </div>
                   </div>
-                  <button className="btn btn-ghost" onClick={() => setReviewing(s)}>
-                    View
-                  </button>
                 </div>
               ))}
             </div>
           </section>
         )}
 
-        {!loading && sessions.length === 0 && (
+        {!loading && queue.length === 0 && upcoming.length === 0 && (
           <div className="dash-empty">
             <p>No study sessions yet.</p>
-            <Link href="/" className="btn btn-primary">Create your first plan</Link>
+            <Link href="/" className="btn btn-primary">
+              Create your first plan
+            </Link>
           </div>
         )}
-      </main>
+      </div>
 
+      {/* Review Modal */}
       {reviewing && (
         <div className="modal-overlay" onClick={() => !submitting && setReviewing(null)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
@@ -162,14 +261,15 @@ export default function Dashboard() {
             </div>
             <p className="modal-prompt">How well did you recall this material?</p>
             <div className="review-buttons">
-              {QUALITY_BUTTONS.map(({ label, quality, className }) => (
+              {RATING_BUTTONS.map(({ label, rating, cls, sub }) => (
                 <button
                   key={label}
-                  className={`review-btn ${className}`}
+                  className={cls}
                   disabled={submitting}
-                  onClick={() => submitReview(quality)}
+                  onClick={() => submitReview(rating)}
                 >
                   {label}
+                  <span className="review-btn-sublabel">{sub}</span>
                 </button>
               ))}
             </div>

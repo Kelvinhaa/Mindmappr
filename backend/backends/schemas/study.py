@@ -37,18 +37,19 @@ class StudyResponse(BaseModel):
     next_review_at: Optional[datetime] = None
     review_count: int = 0
     interval_days: int = 1
+    stability: float = 0.0
 
 
 class PreviewResponse(BaseModel):
     subject: str
     time: int
     level: str
-    goal: Optional[str]
+    goal: Optional[str] = None
     recommendation: StudyRecommendation
 
 
 class ReviewRequest(BaseModel):
-    quality: int  # 0=Again, 2=Hard, 4=Good, 5=Easy
+    rating: int = Field(ge=1, le=4, description="FSRS rating: 1=Again, 2=Hard, 3=Good, 4=Easy")
 
 
 class ReviewResponse(BaseModel):
@@ -59,3 +60,28 @@ class ReviewResponse(BaseModel):
     review_count: int
     interval_days: int
     ease_factor: float
+    stability: float
+
+
+class ReviewQueueItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    subject: str
+    level: str
+    goal: Optional[str] = None
+    time: int
+    review_count: int
+    interval_days: int
+    next_review_at: Optional[datetime] = None
+    days_overdue: float
+    stability: float = 0.0
+    ease_factor: float = 5.0
+    recommendation: StudyRecommendation
+
+
+class StatsResponse(BaseModel):
+    total_sessions: int
+    due_today: int
+    reviewed_today: int
+    avg_stability: float

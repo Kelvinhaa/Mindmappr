@@ -19,3 +19,4 @@ class StudySession(Base):
     review_count = Column(Integer, nullable=False, server_default="0")
     ease_factor = Column(Float, nullable=False, server_default="2.5")
     interval_days = Column(Integer, nullable=False, server_default="1")
+    stability = Column(Float, nullable=False, server_default="0")
