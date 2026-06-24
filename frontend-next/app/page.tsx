@@ -272,6 +272,73 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* FSRS demo — only shown to visitors (no session) */}
+      {!accessToken && (
+        <div className="demo-section">
+          <div className="demo-divider"><span>How spaced repetition works</span></div>
+
+          <div className="demo-card">
+            {/* Topbar */}
+            <div className="demo-topbar">
+              <div className="demo-topbar-left">
+                <span className="demo-topbar-icon">🧠</span>
+                <span className="demo-topbar-title">Your Study Dashboard</span>
+              </div>
+              <span className="demo-badge">FSRS-5</span>
+            </div>
+
+            {/* Stats */}
+            <div className="demo-stats">
+              <div className="demo-stat">
+                <div className="demo-stat-value">12</div>
+                <div className="demo-stat-label">Sessions</div>
+              </div>
+              <div className="demo-stat">
+                <div className="demo-stat-value demo-stat-value--brand">3</div>
+                <div className="demo-stat-label">Due Today</div>
+              </div>
+              <div className="demo-stat">
+                <div className="demo-stat-value">5</div>
+                <div className="demo-stat-label">Reviewed</div>
+              </div>
+            </div>
+
+            {/* Session list */}
+            <div className="demo-sessions">
+              <div className="demo-session-label">Due for review</div>
+
+              {[
+                { subject: "Linear Algebra — Eigenvalues", meta: "Advanced · 45 min · 3× reviewed", stability: 78, tag: "Due today", tagCls: "demo-tag--due", due: true },
+                { subject: "Organic Chemistry Chapter 5",  meta: "Intermediate · 60 min · 1× reviewed", stability: 22, tag: "2d overdue", tagCls: "demo-tag--over", due: true },
+                { subject: "Data Structures — Trees", meta: "Beginner · 30 min · 5× reviewed", stability: 94, tag: "In 8 days", tagCls: "demo-tag--soon", due: false },
+              ].map((s, i) => (
+                <div key={i} className={s.due ? "demo-session demo-session--due" : "demo-session"}>
+                  <div className="demo-session-info">
+                    <div className="demo-session-subject">{s.subject}</div>
+                    <div className="demo-session-meta">{s.meta}</div>
+                    <div className="demo-stability">
+                      <div className="demo-stability-track">
+                        <div className="demo-stability-fill" style={{ width: `${s.stability}%` }} />
+                      </div>
+                      <span className="demo-stability-label">S: {(s.stability / 10).toFixed(1)}d</span>
+                    </div>
+                  </div>
+                  <span className={`demo-tag ${s.tagCls}`}>{s.tag}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* CTA */}
+            <div className="demo-cta">
+              <p className="demo-cta-text">
+                <strong>MindMappr remembers for you.</strong> The algorithm schedules each review at the optimal moment — so you never over-study or forget.
+              </p>
+              <a href="/register" className="btn btn-primary">Start tracking free</a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

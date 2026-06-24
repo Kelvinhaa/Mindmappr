@@ -117,19 +117,18 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="container">
-      <header className="header">
-        <div className="logo">
-          <span className="logo-icon">🧠</span>
-          <span className="logo-text">MindMappr</span>
+    <div className="dash-page">
+      <header className="dash-topbar">
+        <div className="dash-topbar-logo">
+          <span className="dash-topbar-icon">🧠</span>
+          <span className="dash-topbar-name">MindMappr</span>
         </div>
-        <nav className="dash-nav">
+        <nav className="dash-topbar-nav">
           <Link href="/" className="btn btn-ghost">New Plan</Link>
         </nav>
-        <p className="tagline">Your study history and review schedule</p>
       </header>
 
-      <main>
+      <div className="dash-body">
         <h2 className="dash-heading">Study Dashboard</h2>
 
         {/* Stats bar */}
@@ -244,7 +243,7 @@ export default function Dashboard() {
             </Link>
           </div>
         )}
-      </main>
+      </div>
 
       {/* Review Modal */}
       {reviewing && (
