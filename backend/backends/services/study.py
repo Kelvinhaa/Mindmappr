@@ -1,4 +1,5 @@
 import json
+import math
 import os
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
@@ -99,6 +100,93 @@ Respond with JSON only."""
         print(f"[study-service] API error, using fallback: {e}")
         return _fallback_recommendation(subject, time, level)
 
+
+# ---------------------------------------------------------------------------
+# FSRS-5 spaced repetition algorithm
+# ---------------------------------------------------------------------------
+
+_DECAY: float = -0.5
+_DESIRED_RETENTION: float = 0.9
+_FACTOR: float = _DESIRED_RETENTION ** (1.0 / _DECAY) - 1  # ≈ 0.2346
+
+_W: list[float] = [
+    0.4197, 1.1829, 3.1262, 15.4722,  # w[0-3]:  S₀ for Again/Hard/Good/Easy
+    7.2102, 0.5316, 1.0651, 0.0589,   # w[4-7]:  difficulty params
+    1.5330, 0.14,   0.98,   2.2700,   # w[8-11]: recall stability
+    0.0300, 0.2900, 0.2400, 2.9898,   # w[12-15]: forget stability + penalties
+    0.5100, 0.3400, 0.3000,           # w[16-18]: easy bonus, recall growth
+]
+
+
+def _retrievability(t: float, s: float) -> float:
+    if s <= 0:
+        return 0.0
+    return (1 + _FACTOR * t / s) ** _DECAY
+
+
+def _initial_stability(rating: int) -> float:
+    return _W[rating - 1]
+
+
+def _initial_difficulty(rating: int) -> float:
+    return max(1.0, min(10.0, _W[4] - math.exp(_W[5] * (rating - 1)) + 1))
+
+
+def _next_difficulty(d: float, rating: int) -> float:
+    d0_good = _W[4] - math.exp(_W[5] * 2) + 1
+    return max(1.0, min(10.0, _W[6] * d0_good + (1 - _W[6]) * (d - _W[7] * (rating - 3))))
+
+
+def _stability_recall(s: float, d: float, r: float, rating: int) -> float:
+    hard = _W[15] if rating == 2 else 1.0
+    easy = _W[16] if rating == 4 else 1.0
+    return max(0.1,
+        s * math.exp(_W[17]) * (11 - d) * (s ** -_W[9])
+        * (math.exp((1 - r) * _W[10]) - 1) * hard * easy + 1
+    )
+
+
+def _stability_forget(s: float, d: float, r: float) -> float:
+    return max(0.1,
+        _W[11] * (d ** -_W[12]) * ((s + 1) ** _W[13] - 1) * math.exp((1 - r) * _W[14])
+    )
+
+
+def _fsrs_interval(s: float) -> int:
+    return max(1, round(s / _FACTOR * (_DESIRED_RETENTION ** (1.0 / _DECAY) - 1)))
+
+
+def apply_fsrs(
+    stability: float,
+    difficulty: float,
+    review_count: int,
+    rating: int,
+    elapsed_days: Optional[float] = None,
+) -> tuple[int, float, float]:
+    """
+    FSRS-5 algorithm. rating: 1=Again 2=Hard 3=Good 4=Easy.
+    Returns (interval_days, new_stability, new_difficulty).
+    Difficulty is stored in the ease_factor column.
+    stability==0 is the sentinel for a card never FSRS-reviewed.
+    """
+    rating = max(1, min(4, rating))
+
+    if stability == 0 or review_count == 0:
+        s = _initial_stability(rating)
+        d = _initial_difficulty(rating)
+        return _fsrs_interval(s), s, d
+
+    t = elapsed_days if elapsed_days is not None else _fsrs_interval(stability)
+    r = _retrievability(t, stability)
+    d = _next_difficulty(difficulty, rating)
+    s = (_stability_forget(stability, difficulty, r) if rating == 1
+         else _stability_recall(stability, difficulty, r, rating))
+    return _fsrs_interval(s), s, d
+
+
+# ---------------------------------------------------------------------------
+# SM-2 (kept for reference — no longer used by the review endpoint)
+# ---------------------------------------------------------------------------
 
 def apply_sm2(
     ease_factor: float, interval_days: int, review_count: int, quality: int

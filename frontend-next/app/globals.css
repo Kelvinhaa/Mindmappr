@@ -344,3 +344,130 @@ select {
 .review-btn-good  { background: #dbeafe; color: #2563eb; }
 .review-btn-easy  { background: #dcfce7; color: #16a34a; }
 .modal-cancel { margin-top: 0.25rem; width: 100%; }
+
+/* =============================================
+   FSRS Dashboard additions
+   ============================================= */
+
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--foreground);
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.stat-card--due .stat-value { color: var(--primary); }
+
+.session-card--overdue {
+  border-color: rgba(220, 38, 38, 0.3);
+  background: rgba(220, 38, 38, 0.03);
+}
+.due-badge--overdue { color: var(--error); font-weight: 600; font-size: 0.8rem; }
+.due-badge--today  { color: var(--primary); font-weight: 600; font-size: 0.8rem; }
+
+.stability-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+.stability-bar-track {
+  flex: 1;
+  height: 4px;
+  background: var(--muted);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+.stability-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #ea580c, #16a34a);
+  transition: width 0.4s ease;
+}
+.stability-label {
+  font-size: 0.7rem;
+  color: var(--muted-foreground);
+  min-width: 3.5rem;
+  text-align: right;
+}
+
+.review-confirmed {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  background: rgba(22, 163, 74, 0.06);
+  border: 1px solid rgba(22, 163, 74, 0.2);
+  border-radius: var(--radius);
+  font-size: 0.8rem;
+  color: var(--success);
+  font-weight: 500;
+  animation: fadeIn 0.25s ease;
+}
+
+.review-btn-rating-1 { background: #fee2e2; color: #dc2626; }
+.review-btn-rating-2 { background: #ffedd5; color: #ea580c; }
+.review-btn-rating-3 { background: #dbeafe; color: #2563eb; }
+.review-btn-rating-4 { background: #dcfce7; color: #16a34a; }
+.review-btn-sublabel {
+  font-size: 0.7rem;
+  font-weight: 400;
+  opacity: 0.75;
+  display: block;
+  margin-top: 0.1rem;
+}
+.review-btn-tall {
+  flex-direction: column;
+  height: auto;
+  padding: 0.6rem 0.75rem;
+  line-height: 1.2;
+}
+
+.dash-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.dash-section-count {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  background: var(--muted);
+  color: var(--muted-foreground);
+}
+.dash-section-count--due {
+  background: rgba(234, 88, 12, 0.1);
+  color: var(--primary);
+}
+
+/* Override full-width .btn-primary when used outside the main form */
+.session-card .btn { width: auto; margin-top: 0; }
+.dash-empty .btn   { width: auto; margin-top: 0; }
+
+@media (max-width: 480px) {
+  .stats-bar { grid-template-columns: 1fr 1fr; }
+  .stats-bar .stat-card:last-child { grid-column: span 2; }
+}
