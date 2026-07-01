@@ -12,25 +12,53 @@ load_dotenv()
 
 client = AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
-SYSTEM_PROMPT = """You are an expert study coach who creates practical, specific study plans.
+# Curated, science-backed study techniques. Claude must pick technique titles
+# verbatim from this list (see SYSTEM_PROMPT) instead of inventing new ones.
+TECHNIQUE_LIBRARY = [
+    {"name": "Active Recall", "description": "Testing yourself on material without looking at notes, forcing retrieval from memory.", "best_for": "all-purpose"},
+    {"name": "Spaced Repetition / Retrieval Drill", "description": "A self-quiz or flashcard block that repeatedly retrieves prior material within the session.", "best_for": "memorization-heavy subjects"},
+    {"name": "Feynman Technique", "description": "Explaining the concept in plain language as if teaching someone else, exposing gaps in understanding.", "best_for": "concept-heavy or qualitative subjects"},
+    {"name": "Interleaving", "description": "Mixing related topics or problem types within a session instead of blocking one type at a time.", "best_for": "procedural/quantitative subjects"},
+    {"name": "Elaborative Interrogation", "description": "Asking 'why' and 'how' questions about facts to build deeper understanding of the underlying reasoning.", "best_for": "concept-heavy or qualitative subjects"},
+    {"name": "Dual Coding", "description": "Combining a verbal explanation with a visual representation (diagram, sketch) of the same concept.", "best_for": "all-purpose"},
+    {"name": "Mind Mapping", "description": "Visually organizing concepts and their relationships in a branching diagram to see the big picture.", "best_for": "concept-heavy or qualitative subjects"},
+    {"name": "Worked Examples", "description": "Studying fully worked example problems and self-explaining each step before attempting new ones.", "best_for": "procedural/quantitative subjects"},
+    {"name": "Practice Testing", "description": "Timed practice under exam-like conditions (past papers, problem sets) to build retrieval fluency.", "best_for": "exam preparation"},
+    {"name": "Pomodoro / Timeboxing", "description": "Structured focus blocks with short breaks to sustain attention across a session.", "best_for": "all-purpose"},
+    {"name": "Chunking", "description": "Breaking complex material into smaller, manageable units or categories to reduce cognitive load.", "best_for": "procedural/quantitative subjects"},
+    {"name": "Self-Explanation", "description": "Pausing periodically to explain the material in your own words and checking whether it makes sense.", "best_for": "all-purpose"},
+]
+
+_TECHNIQUE_LIBRARY_BLOCK = "\n".join(
+    f"- {t['name']}: {t['description']} (best for: {t['best_for']})" for t in TECHNIQUE_LIBRARY
+)
+_TECHNIQUE_NAMES = {t["name"] for t in TECHNIQUE_LIBRARY}
+
+SYSTEM_PROMPT = f"""You are an expert study coach who creates practical, specific study plans.
 You respond ONLY with valid JSON (no markdown, no code fences, no extra text).
 The JSON must have exactly this structure:
-{
+{{
   "summary": "A 1-2 sentence overview of the study plan",
   "techniques": [
-    {
+    {{
       "title": "Technique name",
       "description": "2-3 sentences explaining how to apply this technique specifically to the given subject. Be concrete and actionable, not generic.",
       "duration_minutes": <integer minutes allocated to this technique>
-    }
+    }}
   ],
   "tips": [
     "A practical, specific tip relevant to the subject and level"
   ]
-}
+}}
+
+You must choose each technique's "title" verbatim from this curated, science-backed list
+(do not invent new technique names, do not modify the wording):
+{_TECHNIQUE_LIBRARY_BLOCK}
 
 Rules:
-- Provide 2-4 techniques depending on available time
+- Provide 2-4 techniques depending on available time, chosen for relevance to the subject, level, goal, and duration
+- Every "title" MUST be an exact name from the list above
+- The "description" MUST still be subject-specific and concrete -- explain how to apply the named technique to this exact subject, not a generic restatement of the technique
 - The sum of all duration_minutes MUST equal the total study duration provided
 - Tips should be 2-4 concrete, actionable items specific to the subject
 - Never use phrases like "Here are some techniques" or "I recommend" -- just provide the data
@@ -89,7 +117,11 @@ Respond with JSON only."""
                 raw = raw.rsplit("```", 1)[0]
                 raw = raw.strip()
             data = json.loads(raw)
-            return StudyRecommendation(**data)
+            recommendation = StudyRecommendation(**data)
+            for t in recommendation.techniques:
+                if t.title not in _TECHNIQUE_NAMES:
+                    print(f"[study-service] Technique title off-library: {t.title!r}")
+            return recommendation
 
         raise ValueError("Unexpected response format from Claude")
 

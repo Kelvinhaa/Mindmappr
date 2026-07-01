@@ -35,8 +35,8 @@ function stabilityPct(stability: number): number {
 
 function urgencyCardClass(item: ReviewQueueItem): string {
   return item.days_overdue > 1
-    ? "session-card session-card--overdue"
-    : "session-card session-card--due";
+    ? "session-card session-card--overdue paper-texture"
+    : "session-card session-card--due paper-texture";
 }
 
 function urgencyBadge(item: ReviewQueueItem): { cls: string; label: string } {
@@ -134,15 +134,15 @@ export default function Dashboard() {
         {/* Stats bar */}
         {stats && (
           <div className="stats-bar">
-            <div className="stat-card">
+            <div className="stat-card paper-texture">
               <div className="stat-value">{stats.total_sessions}</div>
               <div className="stat-label">Sessions</div>
             </div>
-            <div className="stat-card stat-card--due">
+            <div className="stat-card stat-card--due paper-texture">
               <div className="stat-value">{stats.due_today}</div>
               <div className="stat-label">Due Today</div>
             </div>
-            <div className="stat-card">
+            <div className="stat-card paper-texture">
               <div className="stat-value">{stats.reviewed_today}</div>
               <div className="stat-label">Reviewed Today</div>
             </div>
@@ -210,7 +210,7 @@ export default function Dashboard() {
             </div>
             <div className="session-list">
               {upcoming.map(s => (
-                <div key={s.id} className="session-card">
+                <div key={s.id} className="session-card paper-texture">
                   <div className="session-info">
                     <span className="session-subject">{s.subject}</span>
                     <span className="session-meta">
@@ -251,6 +251,9 @@ export default function Dashboard() {
           <div className="modal" onClick={e => e.stopPropagation()}>
             <h3 className="modal-title">Review: {reviewing.subject}</h3>
             <p className="modal-body">{reviewing.recommendation.summary}</p>
+            <div className="result-techniques-used">
+              Techniques used: {reviewing.recommendation.techniques.map(t => t.title).join(", ")}
+            </div>
             <div className="review-techniques">
               {reviewing.recommendation.techniques.map((t, i) => (
                 <div key={i} className="technique-mini">

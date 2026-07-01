@@ -1,6 +1,8 @@
 # Cal.com — Style Reference
 > Monochrome Utility, Human Touch. A system that prioritizes clarity and function with a stark black-and-white palette, but softens it with friendly typography and rounded forms.
 
+> **Superseded (warm-paper restyle):** the app moved to a warm-paper palette (Newsreader serif + IBM Plex Mono, see `globals.css`) and buttons are now ~10px rounded rectangles instead of pills — the pill-button rule below no longer applies. Card radius, layout, and shadow-based elevation are unchanged and still accurate.
+
 **Theme:** light
 
 The design feels like a pragmatic, high-precision instrument. It's built on a strict and disciplined monochrome palette of black, white, and echelon grays, where color is intentionally excluded from the core UI to emphasize function. The custom font, 'Cal Sans', defines the visual identity with its geometric yet open letterforms, giving headlines a technical but approachable character. Nearly all interactive elements are either solid black or pill-shaped outlines, creating a binary system of action. Cards are the fundamental building block, using soft 8-12px radii and extremely subtle shadows to create a quiet, layered topology on a light gray background.
@@ -98,7 +100,7 @@ The design feels like a pragmatic, high-precision instrument. It's built on a st
 | tags | 9999px |
 | cards | 12px |
 | inputs | 8px |
-| buttons | 9999px (pills), 8px (rectangular) |
+| buttons | 10px rounded rect (superseded: was 9999px pills) |
 
 ### Shadows
 
@@ -123,12 +125,12 @@ The design feels like a pragmatic, high-precision instrument. It's built on a st
 ### Primary CTA Button
 **Role:** The main call-to-action on the page.
 
-A pill-shaped button. Background: Ink (#101010). Text: White (#ffffff). Font: Cal Sans UI at 14-16px. Radius: 9999px. Padding: ~12px 24px.
+A rounded-rect button (superseded: was pill-shaped). Background: brand orange. Text: White (#ffffff). Font: IBM Plex Mono uppercase, small size. Radius: 10px. Padding: ~12px 24px.
 
 ### Secondary Ghost Button
 **Role:** A secondary call-to-action, often next to the primary.
 
-A pill-shaped outline button. Background: transparent or Paper (#f4f4f4). Text: Graphite (#242424). Border: 1px solid Silver (#e5e7eb). Radius: 9999px. Padding: ~12px 24px.
+A rounded-rect outline button (superseded: was pill-shaped). Background: transparent or Paper. Text: Graphite/Ink. Border: 1px solid Silver. Radius: 10px. Padding: ~12px 24px.
 
 ### Header CTA Button
 **Role:** The main call-to-action in the sticky header.
@@ -155,7 +157,7 @@ Text-only link. Color: Graphite (#242424). Font: Cal Sans UI at 14-16px. No unde
 ### Do
 - Use 'Cal Sans' weight 600 exclusively for headings (size 20px and above).
 - Employ a strict monochrome palette (Ink, Graphite, Slate, Paper, White) for 99% of the UI.
-- Use pill-shaped buttons (9999px radius) for all primary and secondary page CTAs.
+- Use rounded-rect buttons (10px radius) for all primary and secondary page CTAs (superseded: was 9999px pills).
 - Apply a 12px border radius to all content cards and large containers.
 - Use subtle, diffuse shadows (`rgba(36, 36, 36, 0.05) 0px 4px 8px 0px`) for elevation.
 - Set body copy in 'Cal Sans UI Variable Light' with tight negative letter-spacing.
@@ -163,9 +165,9 @@ Text-only link. Color: Graphite (#242424). Font: Cal Sans UI at 14-16px. No unde
 
 ### Don't
 - Do not introduce any new colors to the core UI; confine color to logos and the single blue accent.
-- Do not use sharp corners on buttons or cards.
+- Do not use sharp corners on cards (buttons now use a 10px rounded rect, not sharp corners or pills — see supersession note above).
 - Do not use font weights heavier than 600.
-- Do not use traditional outlined buttons; use either solid 'Ink' or 'ghost' pill buttons.
+- Buttons are solid brand-orange or outlined 'ghost' rounded-rects (superseded: was pill-only).
 - Do not use gradients on any buttons or card backgrounds.
 - Do not use borders on cards; use shadows for separation.
 - Do not set body text in 'Cal Sans'; it is for headlines only.
