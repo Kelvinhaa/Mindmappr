@@ -109,7 +109,7 @@ export default function Home() {
   const isLoading = uiState.status === "loading";
 
   return (
-    <div className="container">
+    <div className="container container--home">
       <header className="header">
         <div className="logo">
           <span className="logo-icon">🧠</span>
@@ -131,7 +131,8 @@ export default function Home() {
         <p className="tagline">Discover study techniques tailored to your learning style</p>
       </header>
 
-      <main className="main-card">
+      <div className="compose-layout">
+      <main className="main-card paper-texture">
         <h2 className="card-title">Get Personalized Study Recommendations</h2>
         <p className="card-description">
           Tell us about your study session and we&apos;ll suggest the best techniques for you.
@@ -198,8 +199,16 @@ export default function Home() {
         </form>
       </main>
 
+      <div className="plan-panel">
+      {(uiState.status === "idle" || uiState.status === "error") && (
+        <div className="plan-panel-empty paper-texture">
+          <span className="plan-panel-empty-icon">✨</span>
+          <p>Fill in the form and generate a plan — your personalized study plan will appear here.</p>
+        </div>
+      )}
+
       {uiState.status === "loading" && (
-        <section className="results-card">
+        <section className="results-card paper-texture">
           <div className="results-header">
             <h3 className="results-title">Your Study Plan</h3>
           </div>
@@ -219,7 +228,7 @@ export default function Home() {
       )}
 
       {uiState.status === "success" && (
-        <section className="results-card">
+        <section className="results-card paper-texture">
           <div className="results-header">
             <h3 className="results-title">Your Study Plan</h3>
             <button className="btn btn-ghost" onClick={handleClear}>Clear</button>
@@ -232,7 +241,12 @@ export default function Home() {
               {uiState.data.goal && <span>🎯 {uiState.data.goal}</span>}
             </div>
 
-            <div className="result-summary">{uiState.data.recommendation.summary}</div>
+            <div className="result-summary">
+              {uiState.data.recommendation.summary}
+              <div className="result-techniques-used">
+                Techniques used: {uiState.data.recommendation.techniques.map(t => t.title).join(", ")}
+              </div>
+            </div>
 
             <div className="techniques-grid">
               {uiState.data.recommendation.techniques.map((t, i) => (
@@ -259,6 +273,8 @@ export default function Home() {
           </div>
         </section>
       )}
+      </div>
+      </div>
 
       {isGuestResult && (
         <div className="signup-cta">
@@ -278,7 +294,7 @@ export default function Home() {
         <div className="demo-section">
           <div className="demo-divider"><span>How spaced repetition works</span></div>
 
-          <div className="demo-card">
+          <div className="demo-card paper-texture">
             {/* Topbar */}
             <div className="demo-topbar">
               <div className="demo-topbar-left">

@@ -210,3 +210,24 @@ Required GitHub variables: `AWS_REGION`, `EB_APP_NAME`, `EB_ENV_NAME`, `EB_S3_BU
 Required GitHub secret: `AWS_ROLE_TO_ASSUME` (IAM role via GitHub OIDC)
 
 Set all backend env vars (`DATABASE_URL`, `SUPABASE_JWT_SECRET`, etc.) in Elastic Beanstalk environment settings — never in committed files.
+
+---
+
+## UI/Style Verification Rule
+
+**After every frontend change, verify styles visually with Playwright before committing.**
+
+Known CSS pitfall in this codebase: `.btn-primary` has `width: 100%; margin-top: 0.5rem` (designed for the full-width form submit button). Any `<a>` or `<button>` with `btn btn-primary` used outside the form will inherit these and break. Always scope overrides when reusing button classes in new contexts:
+
+```css
+.your-container .btn {
+  width: auto;
+  margin-top: 0;
+  white-space: nowrap;
+  text-decoration: none;
+}
+```
+
+Use `mcp__playwright__browser_take_screenshot` after implementing UI to catch broken layouts before committing.
+
+**Avoid colored left-border accents on list/card items** (e.g. an inset `box-shadow` or `border-left` in `--brand` orange to mark a "due"/"highlighted" row, as seen in `.demo-session--due`). The user considers this pattern visually heavy/dated. Prefer subtle background tint, a badge/pill, or text color to indicate state instead.
