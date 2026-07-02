@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
+import { MindMapprMark } from "@/app/components/MindMapprMark";
+import { Wordmark } from "@/app/components/Wordmark";
 
 const emailSchema = z.email("Please enter a valid email address");
 
@@ -107,8 +109,8 @@ export default function LoginPage() {
     <div className="container">
       <header className="header">
         <div className="logo">
-          <span className="logo-icon">🧠</span>
-          <span className="logo-text">MindMappr</span>
+          <MindMapprMark className="logo-mark" />
+          <Wordmark className="logo-text" />
         </div>
         <p className="tagline">Discover study techniques tailored to your learning style</p>
       </header>
