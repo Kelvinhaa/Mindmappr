@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { MindMapprMark } from "@/app/components/MindMapprMark";
+import { Wordmark } from "@/app/components/Wordmark";
 import type { StudyResponse, StudyFormData } from "@/types/study";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -112,8 +114,8 @@ export default function Home() {
     <div className="container container--home">
       <header className="header">
         <div className="logo">
-          <span className="logo-icon">🧠</span>
-          <span className="logo-text">MindMappr</span>
+          <MindMapprMark className="logo-mark" />
+          <Wordmark className="logo-text" />
         </div>
         {userEmail ? (
           <div className="user-menu">
@@ -203,7 +205,7 @@ export default function Home() {
       {(uiState.status === "idle" || uiState.status === "error") && (
         <div className="plan-panel-empty paper-texture">
           <span className="plan-panel-empty-icon">✨</span>
-          <p>Fill in the form and generate a plan — your personalized study plan will appear here.</p>
+          <p>Fill in the form and generate a plan, your personalized study plan will appear here.</p>
         </div>
       )}
 
@@ -298,7 +300,7 @@ export default function Home() {
             {/* Topbar */}
             <div className="demo-topbar">
               <div className="demo-topbar-left">
-                <span className="demo-topbar-icon">🧠</span>
+                <MindMapprMark className="demo-topbar-mark" />
                 <span className="demo-topbar-title">Your Study Dashboard</span>
               </div>
               <span className="demo-badge">FSRS-5</span>

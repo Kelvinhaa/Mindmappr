@@ -216,6 +216,24 @@ def apply_fsrs(
     return _fsrs_interval(s), s, d
 
 
+def retrievability_now(stability: float, elapsed_days: float) -> float:
+    """Predicted recall probability (0-1) right now, given elapsed time since last review."""
+    return _retrievability(elapsed_days, stability)
+
+
+def predict_review_outcomes(
+    stability: float,
+    difficulty: float,
+    review_count: int,
+    elapsed_days: Optional[float] = None,
+) -> dict[int, int]:
+    """Interval (days) that would result from each possible rating, without persisting anything."""
+    return {
+        rating: apply_fsrs(stability, difficulty, review_count, rating, elapsed_days)[0]
+        for rating in (1, 2, 3, 4)
+    }
+
+
 # ---------------------------------------------------------------------------
 # SM-2 (kept for reference — no longer used by the review endpoint)
 # ---------------------------------------------------------------------------

@@ -77,6 +77,7 @@ class ReviewQueueItem(BaseModel):
     days_overdue: float
     stability: float = 0.0
     ease_factor: float = 5.0
+    retrievability: float = 0.0
     recommendation: StudyRecommendation
 
 
@@ -85,3 +86,19 @@ class StatsResponse(BaseModel):
     due_today: int
     reviewed_today: int
     avg_stability: float
+
+
+class ReviewPreviewResponse(BaseModel):
+    id: int
+    subject: str
+    level: str
+    time: int
+    review_count: int
+    stability: float
+    difficulty: float
+    retrievability: float
+    again_days: int
+    hard_days: int
+    good_days: int
+    easy_days: int
+    recommendation: StudyRecommendation

@@ -11,9 +11,13 @@ from backends.schemas.study import (
     StudyRequest, StudyResponse, PreviewResponse,
     ReviewRequest, ReviewResponse,
     ReviewQueueItem, StatsResponse,
+    ReviewPreviewResponse,
     StudyRecommendation,
 )
-from backends.services.study import generate_recommendation, apply_fsrs
+from backends.services.study import (
+    generate_recommendation, apply_fsrs,
+    retrievability_now, predict_review_outcomes,
+)
 from backends.auth import get_current_user_id
 
 router = APIRouter(
@@ -111,6 +115,10 @@ def get_review_queue(
             days_overdue = (now - s.next_review_at).total_seconds() / 86400
         else:
             days_overdue = (now - s.created_at).total_seconds() / 86400
+        elapsed_since_review = (
+            (now - s.last_reviewed_at).total_seconds() / 86400
+            if s.last_reviewed_at else (now - s.created_at).total_seconds() / 86400
+        )
         result.append(ReviewQueueItem(
             id=s.id,
             subject=s.subject,
@@ -123,9 +131,52 @@ def get_review_queue(
             days_overdue=round(days_overdue, 2),
             stability=s.stability,
             ease_factor=s.ease_factor,
+            retrievability=round(retrievability_now(s.stability, elapsed_since_review), 3),
             recommendation=StudyRecommendation(**s.recommendation),
         ))
     return result
+
+
+@router.get("/{session_id}/review-preview", response_model=ReviewPreviewResponse)
+def get_review_preview(
+    session_id: int,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    session = db.query(StudySession).filter(
+        StudySession.id == session_id,
+        StudySession.user_id == user_id,
+    ).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    now = datetime.now(timezone.utc)
+    elapsed = (
+        (now - session.last_reviewed_at).total_seconds() / 86400
+        if session.last_reviewed_at else (now - session.created_at).total_seconds() / 86400
+    )
+    outcomes = predict_review_outcomes(
+        stability=session.stability,
+        difficulty=session.ease_factor,
+        review_count=session.review_count,
+        elapsed_days=elapsed,
+    )
+
+    return ReviewPreviewResponse(
+        id=session.id,
+        subject=session.subject,
+        level=session.level,
+        time=session.time,
+        review_count=session.review_count,
+        stability=session.stability,
+        difficulty=session.ease_factor,
+        retrievability=round(retrievability_now(session.stability, elapsed), 3),
+        again_days=outcomes[1],
+        hard_days=outcomes[2],
+        good_days=outcomes[3],
+        easy_days=outcomes[4],
+        recommendation=StudyRecommendation(**session.recommendation),
+    )
 
 
 @router.get("/stats", response_model=StatsResponse)

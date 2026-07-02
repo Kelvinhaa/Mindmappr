@@ -54,6 +54,7 @@ export interface ReviewQueueItem {
   days_overdue: number;
   stability: number;
   ease_factor: number;
+  retrievability: number;
   recommendation: StudyRecommendation;
 }
 
@@ -62,6 +63,22 @@ export interface StatsResponse {
   due_today: number;
   reviewed_today: number;
   avg_stability: number;
+}
+
+export interface ReviewPreviewResponse {
+  id: number;
+  subject: string;
+  level: string;
+  time: number;
+  review_count: number;
+  stability: number;
+  difficulty: number;
+  retrievability: number;
+  again_days: number;
+  hard_days: number;
+  good_days: number;
+  easy_days: number;
+  recommendation: StudyRecommendation;
 }
 
 export interface StudyFormData {
