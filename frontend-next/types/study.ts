@@ -19,6 +19,7 @@ export interface StudyResponse {
   goal: string | null;
   recommendation: StudyRecommendation;
   created_at?: string | null;
+  last_reviewed_at?: string | null;
   next_review_at?: string | null;
   review_count: number;
   interval_days: number;

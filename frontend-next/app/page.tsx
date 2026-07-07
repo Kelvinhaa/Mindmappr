@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { TopNav } from "@/app/components/TopNav";
 import { MindMapprMark } from "@/app/components/MindMapprMark";
-import { Wordmark } from "@/app/components/Wordmark";
 import type { StudyResponse, StudyFormData } from "@/types/study";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -16,32 +15,21 @@ type UIState =
   | { status: "error"; message: string };
 
 export default function Home() {
-  const router = useRouter();
   const [uiState, setUiState] = useState<UIState>({ status: "idle" });
   const [formError, setFormError] = useState<string>("");
   const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [isGuestResult, setIsGuestResult] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getSession().then(({ data: { session } }) => {
       setAccessToken(session?.access_token ?? null);
-      setUserEmail(session?.user?.email ?? null);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setAccessToken(session?.access_token ?? null);
-      setUserEmail(session?.user?.email ?? null);
     });
     return () => subscription.unsubscribe();
   }, []);
-
-  async function handleSignOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
-  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -111,25 +99,10 @@ export default function Home() {
   const isLoading = uiState.status === "loading";
 
   return (
-    <div className="container container--home">
+    <>
+      <TopNav />
+      <div className="container container--home">
       <header className="header">
-        <div className="logo">
-          <MindMapprMark className="logo-mark" />
-          <Wordmark className="logo-text" />
-        </div>
-        {userEmail ? (
-          <div className="user-menu">
-            <div className="user-avatar">{userEmail[0]}</div>
-            <span className="user-email">{userEmail}</span>
-            <a href="/dashboard" className="btn btn-ghost">Dashboard</a>
-            <button className="btn-signout" onClick={handleSignOut}>Sign out</button>
-          </div>
-        ) : (
-          <div className="auth-buttons">
-            <a href="/login" className="btn btn-ghost">Log in</a>
-            <a href="/register" className="btn btn-primary">Sign up</a>
-          </div>
-        )}
         <p className="tagline">Discover study techniques tailored to your learning style</p>
       </header>
 
@@ -357,6 +330,7 @@ export default function Home() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }

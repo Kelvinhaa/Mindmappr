@@ -4,8 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { MindMapprMark } from "@/app/components/MindMapprMark";
-import { Wordmark } from "@/app/components/Wordmark";
+import { TopNav } from "@/app/components/TopNav";
 import type { ReviewQueueItem, ReviewPreviewResponse, ReviewResponse } from "@/types/study";
 import { stabilityPct, urgencyCardClass, urgencyBadge, formatIntervalDays } from "@/lib/reviewFormat";
 
@@ -119,15 +118,7 @@ export default function ReviewClient() {
 
   return (
     <div className="dash-page">
-      <header className="dash-topbar">
-        <div className="dash-topbar-logo">
-          <MindMapprMark className="dash-topbar-mark" />
-          <Wordmark className="dash-topbar-name" />
-        </div>
-        <nav className="dash-topbar-nav">
-          <Link href="/dashboard" className="btn btn-ghost">Dashboard</Link>
-        </nav>
-      </header>
+      <TopNav />
 
       <div className="dash-body">
         {mode === "loading" && <p className="dash-empty">Loading…</p>}
