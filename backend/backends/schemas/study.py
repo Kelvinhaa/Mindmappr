@@ -34,6 +34,7 @@ class StudyResponse(BaseModel):
     goal: Optional[str] = None
     recommendation: StudyRecommendation
     created_at: Optional[datetime] = None
+    last_reviewed_at: Optional[datetime] = None
     next_review_at: Optional[datetime] = None
     review_count: int = 0
     interval_days: int = 1
